@@ -11,7 +11,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 status](https://www.r-pkg.org/badges/version/foodwebbuilder)](https://CRAN.R-project.org/package=foodwebbuilder)
 <!-- badges: end -->
 
-The goal of foodwebbuilder is to reconstruct local food-web structures
+The goal of `foodwebbuilder` is to reconstruct local food-web structures
 that account for intraspecific diet variation by integrating both
 taxonomic identity and body size (see Bonnaffé et al. (2021) and Danet
 et al. (2021) for more details).
