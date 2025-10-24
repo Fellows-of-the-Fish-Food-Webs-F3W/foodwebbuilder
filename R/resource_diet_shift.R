@@ -2,7 +2,7 @@
 #'
 #' Table summarizing the resource diet that were assumed to build the trophic networks.
 #'
-#' @format “A data frame with 9 rows and 14 columns:
+#' @format “A data frame with 9 rows and 14 columns. Each row represents a resource taxon:
 #' \describe{
 #'   \item{species_code}{Species code}
 #'   \item{taxon_name}{Taxon name}
@@ -19,5 +19,5 @@
 #'   \item{zoob}{Zoobenthos food source}
 #'   \item{fish}{Fish food source}
 #' }
-#' @source Bonnaffé, Danet et al. (2021). Comparison of size-structured and species-level trophic networks reveals antagonistic effects of temperature on vertical trophic diversity at the population and species level. Oikos, 130, 1297–1309. https://doi.org/10.1111/oik.08173
+#' @source * Bonnaffé, Danet et al. (2021). Comparison of size-structured and species-level trophic networks reveals antagonistic effects of temperature on vertical trophic diversity at the population and species level. Oikos, 130, 1297–1309. doi: [10.1111/oik.08173](https://doi.org/10.1111/oik.08173)
 "fish_diet_shift"
