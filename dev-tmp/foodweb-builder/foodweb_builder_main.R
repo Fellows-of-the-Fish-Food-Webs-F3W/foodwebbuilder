@@ -45,6 +45,29 @@ nrow(pred_win)
 #
 ###
 
+###################
+## BUILD METAWEB ##
+###################
+
+## Global variables
+NUM_CLASSES = 3
+SELECTED_RESOURCES = c("det", "biof", "phytob", "macroph", "phytopl", "zoopl", "zoob")
+
+## Remove missing species
+ind_measure = remove_missing_species(ind_measure, fish_diet_shift, pred_win)
+
+## Compute size classes
+tab_size_classes = compute_size_classes(ind_measure, NUM_CLASSES)
+
+## Build metaweb
+metaweb = build_metaweb(tab_size_classes, pred_win, NUM_CLASSES, SELECTED_RESOURCES)
+
+## Visualise
+image(t(as.matrix(metaweb)), ylim=c(1,0), col = colorRampPalette(c("blue", "white", "red"))(100))
+
+#
+###
+
 ###########################
 ## BUILD LOCAL FOOD WEBS ##
 ###########################

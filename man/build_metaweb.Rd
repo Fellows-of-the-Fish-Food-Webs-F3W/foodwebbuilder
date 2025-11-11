@@ -4,7 +4,14 @@
 \alias{build_metaweb}
 \title{Build a Metaweb Interaction Network}
 \usage{
-build_metaweb(tab_size_classes, pred_win, num_classes, selected_resources)
+build_metaweb(
+  tab_size_classes,
+  pred_win,
+  fish_diet_shift,
+  resource_diet_shift,
+  num_classes,
+  selected_resources
+)
 }
 \arguments{
 \item{tab_size_classes}{A data frame of size‐class boundaries for each
@@ -14,6 +21,16 @@ species, typically produced by \code{\link[=compute_size_classes]{compute_size_c
 \item{pred_win}{A data frame describing the predator–prey window for each
 species, including columns \code{species_code}, \code{beta_min}, and \code{beta_max},
 defining the lower and upper ratios of prey to predator body size.}
+
+\item{fish_diet_shift}{A data frame describing ontogenetic diet shifts for
+each fish species. Must include \code{species_code}, \code{size_min}, \code{size_max},
+and columns indicating dietary components (e.g., \code{fish}, \code{benthos}, etc.).
+Used to determine piscivory status and resource consumption.}
+
+\item{resource_diet_shift}{A data frame describing resource‐to‐resource
+interactions (e.g., basal resource dependencies). Must include one row per
+resource and columns corresponding to the resources listed in
+\code{selected_resources}.}
 
 \item{num_classes}{Integer indicating the number of size classes per species,
 matching the value used in \code{\link[=compute_size_classes]{compute_size_classes()}}.}
@@ -28,30 +45,32 @@ Rows correspond to prey items and columns to consumers.
 }
 \description{
 Constructs a complete metaweb—an integrated species interaction network—
-by combining size‐class information, predator–prey relationships, and
-resource links. The resulting matrix describes all potential trophic
-interactions among size‐structured fish species and their resources.
+by combining size‐class information, predator–prey relationships, dietary
+data, and resource links. The resulting matrix describes all potential
+trophic interactions among size‐structured fish species and their resources.
 }
 \details{
 The function proceeds through several steps:
 \enumerate{
 \item Defines \emph{trophic species} as combinations of species and size classes.
 \item Computes prey size‐class limits using the predator–prey window parameters.
-\item Assembles fish–fish interaction matrices based on size overlap and
-piscivory status.
-\item Builds resource–fish and resource–resource interaction matrices.
+\item Builds fish–fish interaction matrices based on size overlap and
+piscivory status from \code{fish_diet_shift}.
+\item Builds resource–fish and resource–resource interaction matrices using
+\code{fish_diet_shift} and \code{resource_diet_shift}.
 \item Combines all matrices into a single metaweb adjacency matrix.
 }
 
-The function assumes the existence of supporting dietary information
-(e.g., \code{fish_diet_shift} and \code{resource_diet_shift}) available in the current
-environment.
+The metaweb thus represents the complete potential trophic network
+integrating all modeled size classes and resource categories.
 }
 \examples{
 \dontrun{
 metaweb <- build_metaweb(
   tab_size_classes = size_classes,
   pred_win = predation_window,
+  fish_diet_shift = fish_diet_data,
+  resource_diet_shift = resource_links,
   num_classes = 5,
   selected_resources = c("zooplankton", "benthos")
 )

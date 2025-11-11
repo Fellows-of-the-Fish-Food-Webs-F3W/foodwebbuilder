@@ -12,7 +12,7 @@
 library("foodwebbuilder")
 
 ## Load functions
-source("metaweb_builder-V2025-11-11-3.R")
+# source("metaweb_builder-V2025-11-11-3.R")
 # source("foodweb_builder-V2025-11-11-1.R")
 
 #
@@ -64,24 +64,6 @@ metaweb = build_metaweb(tab_size_classes, pred_win, NUM_CLASSES, SELECTED_RESOUR
 
 ## Visualise
 image(t(as.matrix(metaweb)), ylim=c(1,0), col = colorRampPalette(c("blue", "white", "red"))(100))
-
-#
-###
-
-###########################
-## BUILD LOCAL FOOD WEBS ##
-###########################
-
-## Random fish sample
-num_samples = 30
-u = round(runif(num_samples,0,1) * nrow(ind_measure))
-ind_measure_local = ind_measure[u,]
-
-## Build local foodweb
-local_fw = build_local_foodweb(ind_measure_local, metaweb, tab_size_classes, NUM_CLASSES, SELECTED_RESOURCES)
-
-## Visualise
-image(t(as.matrix(local_fw)), ylim=c(1,0), col = colorRampPalette(c("blue", "white", "red"))(100))
 
 #
 ###

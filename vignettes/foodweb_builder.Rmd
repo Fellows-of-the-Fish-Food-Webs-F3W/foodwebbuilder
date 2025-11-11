@@ -1,0 +1,118 @@
+---
+title: "Foodweb Builder"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Foodweb Builder}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+## Figure options
+knitr::opts_chunk$set(
+  fig.width = 8,
+  fig.height = 6,
+  fig.align = "center",
+  dpi = 150
+)
+
+## Load libraries
+library(foodwebbuilder)
+```
+
+## Step 1: Load data
+
+```{r}
+## Individual body length measurements
+data(ind_measure)
+head(ind_measure)
+nrow(ind_measure)
+
+## Fish ontogenetic diet shifts
+data(fish_diet_shift)
+head(fish_diet_shift)
+nrow(fish_diet_shift)
+
+## Resource ontogenetic diet shifts
+data(resource_diet_shift)
+head(resource_diet_shift)
+nrow(resource_diet_shift)
+
+## Fish predation windows
+data(pred_win)
+head(pred_win)
+nrow(pred_win)
+```
+
+## Step 2: Remove missing species
+
+```{r}
+## Filter out species not present in reference files
+ind_measure <- remove_missing_species(ind_measure, fish_diet_shift, pred_win)
+```
+
+## Step 3: Compute size classes
+
+```{r}
+## Global variable
+NUM_CLASSES <- 3
+
+## Compute size classes
+tab_size_classes <- compute_size_classes(ind_measure, NUM_CLASSES)
+head(tab_size_classes)
+```
+
+## Step 4: Build metaweb from size classes
+
+```{r}
+## Global variable
+SELECTED_RESOURCES <- c("det", "biof", "phytob", "macroph", "phytopl", "zoopl", "zoob")
+
+## Build metaweb
+metaweb <- build_metaweb(
+  tab_size_classes = tab_size_classes,
+  pred_win = pred_win,
+  fish_diet_shift = fish_diet_shift,
+  resource_diet_shift = resource_diet_shift,
+  num_classes = NUM_CLASSES,
+  selected_resources = SELECTED_RESOURCES
+)
+```
+
+## Step 5: Build local foodweb
+
+```{r}
+## Random fish sample
+num_samples = 30
+u = round(runif(num_samples,0,1) * nrow(ind_measure))
+ind_measure_local = ind_measure[u,]
+
+## Build local foodweb
+local_fw = build_local_foodweb(ind_measure_local, metaweb, tab_size_classes, NUM_CLASSES, SELECTED_RESOURCES)
+```
+
+## Step 6: Visualisations
+
+```{r, ig.align='center', out.width='100%'}
+## Visualise local foodweb
+image(
+  t(as.matrix(local_fw)),
+  ylim = c(1, 0),
+  col = colorRampPalette(c("blue", "white", "red"))(100),
+  main = "Local Foodweb",
+  axes = F
+)
+
+## Add custom axes with labels
+axis(1,
+     at = seq(0, 1, length.out = ncol(local_fw)),
+     labels = colnames(local_fw),
+     las = 2, cex.axis = 0.8)  # bottom (columns)
+axis(2,
+     at = seq(1, 0, length.out = nrow(local_fw)),
+     labels = rev(rownames(local_fw)),
+     las = 2, cex.axis = 0.8)  # left (rows, reversed to match orientation)
+
+## End
+box()
+```
