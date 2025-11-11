@@ -87,20 +87,15 @@ species_code = unique(ind_measure$species_code)
 tab_size_classes = NULL
 for (species_code_ in species_code){
   
-  ## Iterator
-  print(species_code_)
-  
   ## Subset data
   s = ind_measure$species_code == species_code_
   ind_measure_ = ind_measure[s,]
-  print(nrow(ind_measure_))
   
   ## Compute max length
   size_max_ = max(ind_measure_$size)
   
   ## Divide in size classes
   size_classes_ = seq(0, size_max_, size_max_/NUM_CLASSES)
-  print(size_classes_)
   
   ## Collect
   tab_size_classes = rbind(tab_size_classes, c(species_code_, size_classes_))
@@ -130,15 +125,12 @@ trophic_species_code = paste(rep(species_code, 1, each=NUM_CLASSES), 1:NUM_CLASS
 ###############################
 
 ## Subset rows in predation window file
-species_code_ = tab_size_classes$species_code
-s = match(species_code_, pred_win$species_code)
+species_code = tab_size_classes$species_code
+s = match(species_code, pred_win$species_code)
 pred_win_ = pred_win[s,]
 
-## Check for NA
-missing = species_code[is.na(pred_win_$species_code)]
-
 ## Compute class midpoints
-tab_size_classes_midpoints = NULL
+tab_size_classes_midpoints = NULL # data.frame(cbind(species_code, matrix(mp_size_classes, ncol=NUM_CLASSES, byrow=T)))
 for (j in 2:(ncol(tab_size_classes)-1))
 {
   tab_size_classes_midpoints_ = 0.5 * (as.numeric(tab_size_classes[,j+1]) + as.numeric(tab_size_classes[,j]))
