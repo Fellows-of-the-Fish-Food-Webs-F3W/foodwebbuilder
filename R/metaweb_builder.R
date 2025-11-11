@@ -144,9 +144,9 @@ compute_size_classes = function(ind_measure, num_classes){
 #'
 #' @description
 #' Constructs a complete metaweb—an integrated species interaction network—
-#' by combining size‐class information, predator–prey relationships, and
-#' resource links. The resulting matrix describes all potential trophic
-#' interactions among size‐structured fish species and their resources.
+#' by combining size‐class information, predator–prey relationships, dietary
+#' data, and resource links. The resulting matrix describes all potential
+#' trophic interactions among size‐structured fish species and their resources.
 #'
 #' @param tab_size_classes A data frame of size‐class boundaries for each
 #'   species, typically produced by [compute_size_classes()]. Must contain a
@@ -154,6 +154,14 @@ compute_size_classes = function(ind_measure, num_classes){
 #' @param pred_win A data frame describing the predator–prey window for each
 #'   species, including columns `species_code`, `beta_min`, and `beta_max`,
 #'   defining the lower and upper ratios of prey to predator body size.
+#' @param fish_diet_shift A data frame describing ontogenetic diet shifts for
+#'   each fish species. Must include `species_code`, `size_min`, `size_max`,
+#'   and columns indicating dietary components (e.g., `fish`, `benthos`, etc.).
+#'   Used to determine piscivory status and resource consumption.
+#' @param resource_diet_shift A data frame describing resource‐to‐resource
+#'   interactions (e.g., basal resource dependencies). Must include one row per
+#'   resource and columns corresponding to the resources listed in
+#'   `selected_resources`.
 #' @param num_classes Integer indicating the number of size classes per species,
 #'   matching the value used in [compute_size_classes()].
 #' @param selected_resources Character vector giving the names of resource
@@ -168,20 +176,22 @@ compute_size_classes = function(ind_measure, num_classes){
 #' The function proceeds through several steps:
 #' 1. Defines *trophic species* as combinations of species and size classes.
 #' 2. Computes prey size‐class limits using the predator–prey window parameters.
-#' 3. Assembles fish–fish interaction matrices based on size overlap and
-#'    piscivory status.
-#' 4. Builds resource–fish and resource–resource interaction matrices.
+#' 3. Builds fish–fish interaction matrices based on size overlap and
+#'    piscivory status from `fish_diet_shift`.
+#' 4. Builds resource–fish and resource–resource interaction matrices using
+#'    `fish_diet_shift` and `resource_diet_shift`.
 #' 5. Combines all matrices into a single metaweb adjacency matrix.
 #'
-#' The function assumes the existence of supporting dietary information
-#' (e.g., `fish_diet_shift` and `resource_diet_shift`) available in the current
-#' environment.
+#' The metaweb thus represents the complete potential trophic network
+#' integrating all modeled size classes and resource categories.
 #'
 #' @examples
 #' \dontrun{
 #' metaweb <- build_metaweb(
 #'   tab_size_classes = size_classes,
 #'   pred_win = predation_window,
+#'   fish_diet_shift = fish_diet_data,
+#'   resource_diet_shift = resource_links,
 #'   num_classes = 5,
 #'   selected_resources = c("zooplankton", "benthos")
 #' )
@@ -191,7 +201,7 @@ compute_size_classes = function(ind_measure, num_classes){
 #' @seealso [remove_missing_species()], [compute_size_classes()]
 #'
 #' @export
-build_metaweb = function(tab_size_classes, pred_win, num_classes, selected_resources)
+build_metaweb = function(tab_size_classes, pred_win, fish_diet_shift, resource_diet_shift, num_classes, selected_resources)
 {
   
   ############################
