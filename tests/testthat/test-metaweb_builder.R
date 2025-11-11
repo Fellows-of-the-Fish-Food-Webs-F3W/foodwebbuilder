@@ -1,0 +1,34 @@
+test_that("build_metaweb handles small example data", {
+
+  ## Table with size classes
+  small_species = data.frame(species_code = c("A","B"), 
+                             lower_bound = c(0,0), 
+                             upper_bound_1 = c(10,10),
+                             upper_bound_2 = c(15,15))
+
+  ## Table with predation window parameters
+  small_predwin = data.frame(species_code = c("A","B"), 
+                             beta_min = c(0.25,0.5), 
+                             beta_max = c(0.9,1.0))
+
+  ## Table with fish ontogenetic diet shifts
+  small_fish = data.frame(species_code = c("A","B"), 
+                          size_min = c(0,0), 
+                          size_max = c(20,20), 
+                          zooplankton = c(0,1), 
+                          benthos= c(0,1), 
+                          fish = c(0,1))
+
+  ## Table with resource ontogenetic diet shifts
+  small_resource = data.frame(species_code = c("zooplankton", "benthos"), 
+                              zooplankton = c(0,1), 
+                              benthos = c(0,1))
+  
+  ## Build metaweb
+  result = build_metaweb(small_species, small_predwin, small_fish, small_resource, 2, c("zooplankton", "benthos"))
+  
+  ## Check format and that it returns a square matrix
+  expect_true(is.matrix(result) || is.data.frame(result))
+  expect_equal(dim(result)[1], dim(result)[2])
+
+})
