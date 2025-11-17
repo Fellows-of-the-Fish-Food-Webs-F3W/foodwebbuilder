@@ -72,7 +72,7 @@ metaweb <- build_metaweb(
   fish_diet_shift = fish_diet_data,
   resource_diet_shift = resource_links,
   num_classes = 5,
-  selected_resources = c("zooplankton", "benthos")
+  selected_resources = c("zoopl", "phytopl")
 )
 dim(metaweb)
 }
