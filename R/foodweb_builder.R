@@ -2,23 +2,29 @@
 ## foodweb_builder.R ##
 #######################
 
-## Goal: functions file for building local foodwebs
+## Goal: functions file for building local food webs
 
 ###############
 ## FUNCTIONS ##
 ###############
 
-#' Build a Local Food Web from a Global Metaweb
+#' Build a Local Food Web from a Global Metaweb for All Local Units
 #'
 #' @description
-#' Extracts a local food web (subnetwork) from a global metaweb based on the
-#' species and individual sizes observed at a specific site or sample. The
-#' function filters the metaweb to include only the trophic species and
-#' resources present locally.
+#' Builds a local food web (subnetwork) from a global metaweb **for each**
+#' local sampling unit present in `ind_measure`, as defined by the column
+#' given in `local_id`.
 #'
-#' @param ind_measure_local A data frame of local individual‐level
-#'   measurements containing the columns `species_code` and `size`.
+#' For each local unit, the function identifies which trophic species
+#' (species–size‐class combinations) are represented locally based on
+#' individual sizes, then subsets the global metaweb accordingly.
+#'
+#' @param ind_measure A data frame of individual-level measurements containing
+#'   at least the columns specified by `local_id`, `species_code`, and `size`.
 #'   Each row represents an observed individual in the local community.
+#' @param local_id A character string giving the name of the column in
+#'   `ind_measure` that defines the local sampling units (e.g. `"site_id"`,
+#'   `"operation_id"`).
 #' @param metaweb A global metaweb adjacency matrix (as produced by
 #'   [build_metaweb()]) representing all potential interactions among
 #'   trophic species and resources.
@@ -27,114 +33,131 @@
 #'   a `species_code` column and class bounds.
 #' @param num_classes Integer indicating the number of size classes per
 #'   species, matching the value used in [build_metaweb()].
-#' @param selected_resources Character vector giving the names of resource
-#'   nodes to retain in the local network.
+#' @param selected_resources Character vector of resource nodes to keep in each
+#'   local food web.
 #'
 #' @return
-#' A square adjacency matrix (data frame or matrix) representing the subset
-#' of the metaweb that corresponds to locally present trophic species and
-#' resources.
+#' A named list of local food webs.
+#' Each element is a square adjacency matrix, and names correspond to unique
+#' values of `ind_measure[[local_id]]`.
 #'
 #' @details
-#' For each individual observed locally, the function determines which
-#' trophic species (species–size‐class combinations) are represented based
-#' on body size. It then filters the global metaweb to include only those
-#' trophic species and the selected resource nodes, yielding a local‐scale
-#' interaction network.
+#' For each local unit, the function:
+#' 1. Extracts the individuals belonging to that unit.
+#' 2. Determines the represented trophic species using size-class boundaries.
+#' 3. Subsets the metaweb to keep only present trophic species + resources.
 #'
 #' @examples
 #' \dontrun{
-#' local_fw <- build_local_foodweb(
-#'   ind_measure_local = local_measurements,
-#'   metaweb = global_metaweb,
+#' # Minimal reproducible example :
+#'
+#' # Suppose you already built:
+#' #  - a global metaweb object named `metaweb`
+#' #  - a table of size classes named `size_classes`
+#' #  - an individual measurement table `ind_measure`
+#'
+#' local_foodwebs <- build_local_foodweb(
+#'   ind_measure      = ind_measure,
+#'   local_id         = "operation_id",
+#'   metaweb          = metaweb,
 #'   tab_size_classes = size_classes,
-#'   num_classes = 5,
-#'   selected_resources = c("zooplankton", "benthos")
+#'   num_classes      = 5,
+#'   selected_resources = c("zoopl", "phytopl")
 #' )
-#' dim(local_fw)
+#'
+#' names(local_foodwebs)
+#' dim(local_foodwebs[[1]])
 #' }
 #'
 #' @seealso [build_metaweb()], [compute_size_classes()]
 #'
 #' @export
-build_local_foodweb = function(ind_measure_local, metaweb, tab_size_classes, num_classes, selected_resources){
-  
-  ## Flatten
-  trophic_species_code = paste(rep(tab_size_classes[,1], 1, each=num_classes), 1:num_classes, sep="_")
-  lb_size_classes = as.numeric(t(as.matrix(tab_size_classes[,-c(1,ncol(tab_size_classes))])))
-  ub_size_classes = as.numeric(t(as.matrix(tab_size_classes[,-c(1,2)])))
-  
-  ## Check presence
-  check = NULL
-  for (i in 1:nrow(ind_measure_local)){
-    
-    ## Check presence
-    check_ = (
-      grepl(pattern = ind_measure_local$species_code[i], x = trophic_species_code) &
-        (ind_measure_local$size[i] >= lb_size_classes) &
-        (ind_measure_local$size[i] < ub_size_classes)
-    )*1
-    
-    ## Collect
-    check = rbind(check, check_)
+build_local_foodweb <- function(ind_measure,
+                                local_id,
+                                metaweb,
+                                tab_size_classes,
+                                num_classes,
+                                selected_resources) {
+
+  ## 1. Check required columns are present in ind_measure
+  required_cols <- c(local_id, "species_code", "size")
+  missing_cols  <- setdiff(required_cols, colnames(ind_measure))
+
+  if (length(missing_cols) > 0) {
+    stop(
+      "ind_measure must contain the following columns: ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
   }
-  
-  ## Collapse
-  check = apply(check, 2, sum)
-  cbind(trophic_species_code, check)
-  
-  ## Subset
-  s = which(check > 0)
-  trophic_species_code_subset = c(trophic_species_code[s], selected_resources)
-  
-  ## Subset metaweb
-  metaweb_ = metaweb[trophic_species_code_subset, trophic_species_code_subset]
-  
-  ## End
-  return(metaweb_)
-  
+
+  ## 2. Build trophic species codes (species × size class)
+  trophic_species <- paste(
+    rep(tab_size_classes[, 1], each = num_classes),
+    1:num_classes,
+    sep = "_"
+  )
+
+  ## 3. Flatten lower / upper bounds for size classes
+  # These vectors are aligned with 'trophic_species'
+  lb <- as.numeric(
+    t(as.matrix(tab_size_classes[, -c(1, ncol(tab_size_classes))]))
+  )
+  ub <- as.numeric(
+    t(as.matrix(tab_size_classes[, -c(1, 2)]))
+  )
+
+  ## 4. Extract species code for each trophic species
+  species_of_ts <- sub("_.*$", "", trophic_species)
+
+  # Pre-compute, for each species_code, the indices of its trophic species
+  species_index <- split(seq_along(trophic_species), species_of_ts)
+
+  ## 5. Identify all unique local units
+  local_units <- unique(ind_measure[[local_id]])
+
+  ## 6. Internal helper: build local web for one unit
+  build_one_local <- function(df_local) {
+
+    n_ind <- nrow(df_local)
+    n_ts  <- length(trophic_species)
+
+    # Logical vector: which trophic species are present locally?
+    present <- logical(n_ts)
+
+    for (i in seq_len(n_ind)) {
+
+      sp     <- df_local$species_code[i]
+      size_i <- df_local$size[i]
+
+      # Indices of trophic species associated with this species code
+      idx <- species_index[[sp]]
+
+      if (length(idx) == 0L) next
+
+      # Among those trophic species, which classes contain this individual size?
+      in_class <- (size_i >= lb[idx]) & (size_i < ub[idx])
+
+      # Mark these trophic species as present
+      present[idx[in_class]] <- TRUE
+    }
+
+    # Keep locally present trophic species + selected resource nodes
+    keep <- c(trophic_species[present], selected_resources)
+
+    # Subset the global metaweb to obtain the local food web
+    metaweb[keep, keep, drop = FALSE]
+  }
+
+  ## 7. Build local food webs for each local unit
+  results <- lapply(local_units, function(id) {
+    subset_local <- ind_measure[ind_measure[[local_id]] == id,
+                                c("species_code", "size")]
+    build_one_local(subset_local)
+  })
+
+  # Name list elements with the local_id values
+  names(results) <- as.character(local_units)
+
+  return(results)
 }
-
-#
-###
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

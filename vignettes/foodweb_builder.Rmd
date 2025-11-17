@@ -82,37 +82,50 @@ metaweb <- build_metaweb(
 ## Step 5: Build local foodweb
 
 ```{r}
-## Random fish sample
-num_samples = 30
-u = round(runif(num_samples,0,1) * nrow(ind_measure))
-ind_measure_local = ind_measure[u,]
+## Build one local food web per operation_id
+local_foodwebs <- build_local_foodweb(
+  ind_measure       = ind_measure,
+  local_id          = "operation_id",         # column in ind_measure
+  metaweb           = metaweb,
+  tab_size_classes  = tab_size_classes,
+  num_classes       = NUM_CLASSES,
+  selected_resources = SELECTED_RESOURCES
+)
 
-## Build local foodweb
-local_fw = build_local_foodweb(ind_measure_local, metaweb, tab_size_classes, NUM_CLASSES, SELECTED_RESOURCES)
+## Inspect how many local food webs were built
+length(local_foodwebs)
+
+## Extract one local food web to visualise, e.g. the first one
+local_fw <- local_foodwebs[[1]]
 ```
 
 ## Step 6: Visualisations
 
 ```{r, ig.align='center', out.width='100%'}
-## Visualise local foodweb
+```{r, fig.align='center', out.width='100%'}
+## Visualise one local food web
 image(
   t(as.matrix(local_fw)),
   ylim = c(1, 0),
   col = colorRampPalette(c("blue", "white", "red"))(100),
   main = "Local Foodweb",
-  axes = F
+  axes = FALSE
 )
 
 ## Add custom axes with labels
-axis(1,
-     at = seq(0, 1, length.out = ncol(local_fw)),
-     labels = colnames(local_fw),
-     las = 2, cex.axis = 0.8)  # bottom (columns)
-axis(2,
-     at = seq(1, 0, length.out = nrow(local_fw)),
-     labels = rev(rownames(local_fw)),
-     las = 2, cex.axis = 0.8)  # left (rows, reversed to match orientation)
+axis(
+  1,
+  at    = seq(0, 1, length.out = ncol(local_fw)),
+  labels = colnames(local_fw),
+  las   = 2, cex.axis = 0.8
+)
+axis(
+  2,
+  at    = seq(1, 0, length.out = nrow(local_fw)),
+  labels = rev(rownames(local_fw)),
+  las   = 2, cex.axis = 0.8
+)
 
-## End
+# End
 box()
 ```

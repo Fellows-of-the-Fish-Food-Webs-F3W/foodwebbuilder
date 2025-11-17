@@ -2,10 +2,11 @@
 % Please edit documentation in R/foodweb_builder.R
 \name{build_local_foodweb}
 \alias{build_local_foodweb}
-\title{Build a Local Food Web from a Global Metaweb}
+\title{Build a Local Food Web from a Global Metaweb for All Local Units}
 \usage{
 build_local_foodweb(
-  ind_measure_local,
+  ind_measure,
+  local_id,
   metaweb,
   tab_size_classes,
   num_classes,
@@ -13,9 +14,13 @@ build_local_foodweb(
 )
 }
 \arguments{
-\item{ind_measure_local}{A data frame of local individual‐level
-measurements containing the columns \code{species_code} and \code{size}.
+\item{ind_measure}{A data frame of individual-level measurements containing
+at least the columns specified by \code{local_id}, \code{species_code}, and \code{size}.
 Each row represents an observed individual in the local community.}
+
+\item{local_id}{A character string giving the name of the column in
+\code{ind_measure} that defines the local sampling units (e.g. \code{"site_id"},
+\code{"operation_id"}).}
 
 \item{metaweb}{A global metaweb adjacency matrix (as produced by
 \code{\link[=build_metaweb]{build_metaweb()}}) representing all potential interactions among
@@ -28,37 +33,51 @@ a \code{species_code} column and class bounds.}
 \item{num_classes}{Integer indicating the number of size classes per
 species, matching the value used in \code{\link[=build_metaweb]{build_metaweb()}}.}
 
-\item{selected_resources}{Character vector giving the names of resource
-nodes to retain in the local network.}
+\item{selected_resources}{Character vector of resource nodes to keep in each
+local food web.}
 }
 \value{
-A square adjacency matrix (data frame or matrix) representing the subset
-of the metaweb that corresponds to locally present trophic species and
-resources.
+A named list of local food webs.
+Each element is a square adjacency matrix, and names correspond to unique
+values of \code{ind_measure[[local_id]]}.
 }
 \description{
-Extracts a local food web (subnetwork) from a global metaweb based on the
-species and individual sizes observed at a specific site or sample. The
-function filters the metaweb to include only the trophic species and
-resources present locally.
+Builds a local food web (subnetwork) from a global metaweb \strong{for each}
+local sampling unit present in \code{ind_measure}, as defined by the column
+given in \code{local_id}.
+
+For each local unit, the function identifies which trophic species
+(species–size‐class combinations) are represented locally based on
+individual sizes, then subsets the global metaweb accordingly.
 }
 \details{
-For each individual observed locally, the function determines which
-trophic species (species–size‐class combinations) are represented based
-on body size. It then filters the global metaweb to include only those
-trophic species and the selected resource nodes, yielding a local‐scale
-interaction network.
+For each local unit, the function:
+\enumerate{
+\item Extracts the individuals belonging to that unit.
+\item Determines the represented trophic species using size-class boundaries.
+\item Subsets the metaweb to keep only present trophic species + resources.
+}
 }
 \examples{
 \dontrun{
-local_fw <- build_local_foodweb(
-  ind_measure_local = local_measurements,
-  metaweb = global_metaweb,
+# Minimal reproducible example :
+
+# Suppose you already built:
+#  - a global metaweb object named `metaweb`
+#  - a table of size classes named `size_classes`
+#  - an individual measurement table `ind_measure`
+
+local_foodwebs <- build_local_foodweb(
+  ind_measure      = ind_measure,
+  local_id         = "operation_id",
+  metaweb          = metaweb,
   tab_size_classes = size_classes,
-  num_classes = 5,
-  selected_resources = c("zooplankton", "benthos")
+  num_classes      = 5,
+  selected_resources = c("zoopl", "phytopl")
 )
-dim(local_fw)
+
+names(local_foodwebs)
+dim(local_foodwebs[[1]])
 }
 
 }
