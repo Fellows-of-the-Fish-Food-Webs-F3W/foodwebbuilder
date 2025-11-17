@@ -119,17 +119,101 @@ The `foodwebbuilder` package follows a two-step approach:
     network of potential feeding links among all taxa in the dataset,
     accounting for intraspecific diet variation.
 
-2.  **Extraction of local food-webs** – site- and time-specific networks
-    derived from the metaweb, including only species recorded at each
-    sampling event.
+2.  **Extraction of local food-webs** – subnetworks derived from the
+    metaweb, restricted to the species and size classes observed at each
+    local unit.
 
 ## Step 1 – Reconstructing the trophic metaweb
 
-*To complete*
+The first step consists in building a size-structured trophic metaweb
+from the datasets included in the package.
+
+This workflow illustrates how to:
+
+1.  filter species to retain only those with complete information across
+    all input tables;
+
+2.  define size classes for each fish species based on observed body
+    sizes;
+
+3.  assemble the metaweb, combining fish–fish, resource–fish, and
+    resource–resource interactions into a single adjacency matrix.
+
+``` r
+## 1. Remove species with incomplete information
+ind_clean <- remove_missing_species(
+  ind_measure     = ind_measure,
+  fish_diet_shift = fish_diet_shift,
+  pred_win        = pred_win
+)
+#> missing species found and removed:
+#> LPX LPP
+
+## 2. Define size classes for each species (here: 5 classes)
+size_classes <- compute_size_classes(
+  ind_measure = ind_clean,
+  num_classes = 5
+)
+
+head(size_classes)
+#>   species_code lower_bound upper_bound_1 upper_bound_2 upper_bound_3
+#> 1          CHE           0            88           176           264
+#> 2          ROT           0           6.4          12.8          19.2
+#> 3          TAN           0          19.2          38.4          57.6
+#> 4          CHA           0            21            42            63
+#> 5          EPT           0             9            18            27
+#> 6          EPI           0          13.8          27.6          41.4
+#>   upper_bound_4 upper_bound_5
+#> 1           352           440
+#> 2          25.6            32
+#> 3          76.8            96
+#> 4            84           105
+#> 5            36            45
+#> 6          55.2            69
+
+## 3. Build the trophic metaweb (adjacency matrix)
+metaweb <- build_metaweb(
+  tab_size_classes    = size_classes,
+  pred_win            = pred_win,
+  fish_diet_shift     = fish_diet_shift,
+  resource_diet_shift = resource_diet_shift,
+  num_classes         = 5,
+  selected_resources  = c("zoopl", "phytopl")
+)
+
+## The metaweb is a square matrix: rows = prey, columns = consumers
+dim(metaweb)
+#> [1] 37 37
+
+## Total number of potential interactions
+sum(metaweb)
+#> [1] 205
+```
 
 ## Step 2 – Reconstructing local food-webs
 
-*To complete*
+The second step consists in extracting, for each sampling unit, the
+subnetwork of the global metaweb that includes only the trophic species
+(species × size classes) represented by locally observed individuals,
+along with the selected basal resources.
+
+``` r
+local_foodwebs <- build_local_foodweb(
+  ind_measure       = ind_clean,
+  local_id          = "operation_id",         # column in ind_measure
+  metaweb           = metaweb,
+  tab_size_classes  = size_classes,
+  num_classes         = 5,
+  selected_resources  = c("zoopl", "phytopl")
+)
+
+## Inspect how many local food webs were built
+length(local_foodwebs)
+#> [1] 3
+
+## Extract one local food web
+local_fw <- local_foodwebs[[1]]
+```
 
 ## References
 
