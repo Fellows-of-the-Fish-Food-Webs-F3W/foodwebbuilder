@@ -1,7 +1,7 @@
-test_that("build_local_foodweb handles small example data", {
+testthat::test_that("build_local_foodweb handles small example data", {
 
-  ## 1. Size classes
-  small_species <- data.frame(
+  ## 1. Size classes (2 fish species, 2 size classes)
+  tab_size_classes <- data.frame(
     species_code  = c("A", "B"),
     lower_bound   = c(0, 0),
     upper_bound_1 = c(10, 10),
@@ -9,14 +9,14 @@ test_that("build_local_foodweb handles small example data", {
   )
 
   ## 2. Predator–prey window
-  small_predwin <- data.frame(
+  pred_win <- data.frame(
     species_code = c("A", "B"),
     beta_min     = c(0.25, 0.5),
     beta_max     = c(0.9,  1.0)
   )
 
   ## 3. Fish ontogenetic diet shifts
-  small_fish <- data.frame(
+  fish_diet_shift <- data.frame(
     species_code = c("A", "B"),
     size_min     = c(0, 0),
     size_max     = c(20, 20),
@@ -26,7 +26,7 @@ test_that("build_local_foodweb handles small example data", {
   )
 
   ## 4. Resource diet shifts
-  small_resource <- data.frame(
+  resource_diet_shift <- data.frame(
     species_code = c("zooplankton", "benthos"),
     zooplankton  = c(0, 1),
     benthos      = c(0, 1)
@@ -34,11 +34,11 @@ test_that("build_local_foodweb handles small example data", {
 
   ## 5. Build global metaweb
   metaweb <- build_metaweb(
-    tab_size_classes    = small_species,
-    pred_win            = small_predwin,
-    fish_diet_shift     = small_fish,
-    resource_diet_shift = small_resource,
-    num_classes         = 2,
+    tab_size_classes    = tab_size_classes,
+    pred_win            = pred_win,
+    fish_diet_shift     = fish_diet_shift,
+    resource_diet_shift = resource_diet_shift,
+    num_classes         = 2, # optional consistency check
     selected_resources  = c("zooplankton", "benthos")
   )
 
@@ -46,45 +46,37 @@ test_that("build_local_foodweb handles small example data", {
   ind_measure <- data.frame(
     local_id     = c("site1", "site1"),
     species_code = c("A", "B"),
-    size         = c(5, 12)  # both species present, different size classes
+    size         = c(5, 12)  # A in class 1, B in class 2
   )
 
   ## 7. Build local food webs (one per local_id)
   local_fws <- build_local_foodweb(
-    ind_measure       = ind_measure,
-    local_id          = "local_id",
-    metaweb           = metaweb,
-    tab_size_classes  = small_species,
-    num_classes       = 2,
+    ind_measure        = ind_measure,
+    local_id           = "local_id",
+    metaweb            = metaweb,
+    tab_size_classes   = tab_size_classes,
     selected_resources = c("zooplankton", "benthos")
   )
 
   ## 8. Checks
+  testthat::expect_true(is.list(local_fws))
+  testthat::expect_equal(length(local_fws), 1L)
+  testthat::expect_true("site1" %in% names(local_fws))
 
-  # We expect a named list of local food webs
-  expect_true(is.list(local_fws))
-  expect_equal(length(local_fws), 1L)
-  expect_true("site1" %in% names(local_fws))
-
-  # Extract the local web for "site1"
   local_fw <- local_fws[["site1"]]
 
-  # It should be a matrix or data frame
-  expect_true(is.matrix(local_fw) || is.data.frame(local_fw))
+  testthat::expect_true(is.matrix(local_fw) || is.data.frame(local_fw))
+  testthat::expect_equal(nrow(local_fw), ncol(local_fw))
 
-  # It should be square
-  expect_equal(dim(local_fw)[1], dim(local_fw)[2])
+  # Local nodes must be subset of metaweb nodes
+  testthat::expect_true(all(rownames(local_fw) %in% rownames(metaweb)))
+  testthat::expect_true(all(colnames(local_fw) %in% colnames(metaweb)))
 
-  # All nodes should exist in the global metaweb
-  expect_true(all(rownames(local_fw) %in% rownames(metaweb)))
-  expect_true(all(colnames(local_fw) %in% colnames(metaweb)))
-
-  # No unexpected new nodes
-  expect_false(any(!rownames(local_fw) %in% rownames(metaweb)))
+  # Dimnames should be identical for adjacency matrices
+  testthat::expect_identical(rownames(local_fw), colnames(local_fw))
 })
 
-
-test_that("build_local_foodweb errors if required columns are missing", {
+testthat::test_that("build_local_foodweb errors if required columns are missing", {
 
   # Missing 'species_code' column (we use 'species' instead)
   ind_measure <- data.frame(
@@ -102,24 +94,51 @@ test_that("build_local_foodweb errors if required columns are missing", {
     upper_bound_1 = 10
   )
 
-  expect_error(
+  testthat::expect_error(
     build_local_foodweb(
-      ind_measure       = ind_measure,
-      local_id          = "local_id",
-      metaweb           = metaweb,
-      tab_size_classes  = tab_size_classes,
-      num_classes       = 1,
-      selected_resources = character()
+      ind_measure        = ind_measure,
+      local_id           = "local_id",
+      metaweb            = metaweb,
+      tab_size_classes   = tab_size_classes,
+      selected_resources = "dummy"
     ),
     "ind_measure must contain"
   )
 })
 
+testthat::test_that("build_local_foodweb errors when selected_resources is empty", {
 
-test_that("build_local_foodweb builds one web per local unit", {
+  ind_measure <- data.frame(
+    local_id     = c("site1"),
+    species_code = c("A"),
+    size         = c(5)
+  )
 
-  ## 1. Simple size classes for one species
-  small_species <- data.frame(
+  metaweb <- matrix(0, nrow = 1, ncol = 1)
+  dimnames(metaweb) <- list("dummy", "dummy")
+
+  tab_size_classes <- data.frame(
+    species_code  = "A",
+    lower_bound   = 0,
+    upper_bound_1 = 10
+  )
+
+  testthat::expect_error(
+    build_local_foodweb(
+      ind_measure        = ind_measure,
+      local_id           = "local_id",
+      metaweb            = metaweb,
+      tab_size_classes   = tab_size_classes,
+      selected_resources = character()
+    ),
+    "selected_resources must be a non-empty"
+  )
+})
+
+testthat::test_that("build_local_foodweb builds one web per local unit", {
+
+  ## 1. Simple size classes for one species (2 size classes)
+  tab_size_classes <- data.frame(
     species_code  = "A",
     lower_bound   = 0,
     upper_bound_1 = 10,
@@ -127,36 +146,34 @@ test_that("build_local_foodweb builds one web per local unit", {
   )
 
   ## 2. Predator–prey window
-  small_predwin <- data.frame(
+  pred_win <- data.frame(
     species_code = "A",
     beta_min     = 0.5,
     beta_max     = 1
   )
 
   ## 3. Fish ontogenetic diet shifts
-  small_fish <- data.frame(
+  fish_diet_shift <- data.frame(
     species_code = "A",
     size_min     = 0,
     size_max     = 20,
     zoopl        = 1,
-    benthos      = 0,
     fish         = 0
   )
 
-  ## 4. Resource diet shifts
-  small_resource <- data.frame(
+  ## 4. Resource diet shifts (resource node must exist in species_code)
+  resource_diet_shift <- data.frame(
     species_code = "zoopl",
-    zoopl        = 0,
-    benthos      = 0
+    zoopl        = 0
   )
 
   ## 5. Build global metaweb
   metaweb <- build_metaweb(
-    tab_size_classes    = small_species,
-    pred_win            = small_predwin,
-    fish_diet_shift     = small_fish,
-    resource_diet_shift = small_resource,
-    num_classes         = 2,
+    tab_size_classes    = tab_size_classes,
+    pred_win            = pred_win,
+    fish_diet_shift     = fish_diet_shift,
+    resource_diet_shift = resource_diet_shift,
+    num_classes         = 2, # optional check
     selected_resources  = "zoopl"
   )
 
@@ -169,24 +186,22 @@ test_that("build_local_foodweb builds one web per local unit", {
 
   ## 7. Build local food webs
   res <- build_local_foodweb(
-    ind_measure       = ind_measure,
-    local_id          = "local_id",
-    metaweb           = metaweb,
-    tab_size_classes  = small_species,
-    num_classes       = 2,
+    ind_measure        = ind_measure,
+    local_id           = "local_id",
+    metaweb            = metaweb,
+    tab_size_classes   = tab_size_classes,
     selected_resources = "zoopl"
   )
 
   ## 8. Checks
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(sort(names(res)), c("site1", "site2"))
 
-  # List with one element per local_id
-  expect_true(is.list(res))
-  expect_equal(sort(names(res)), c("site1", "site2"))
-
-  # Each element must be a square matrix/data.frame
-  expect_true(
+  testthat::expect_true(
     all(vapply(res, function(x) {
-      (is.matrix(x) || is.data.frame(x)) && (nrow(x) == ncol(x))
+      (is.matrix(x) || is.data.frame(x)) &&
+        (nrow(x) == ncol(x)) &&
+        identical(rownames(x), colnames(x))
     }, logical(1)))
   )
 })

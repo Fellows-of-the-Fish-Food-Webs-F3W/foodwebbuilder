@@ -48,18 +48,19 @@ nrow(pred_win)
 
 ```{r}
 ## Filter out species not present in reference files
-ind_measure <- remove_missing_species(ind_measure, fish_diet_shift, pred_win)
+ind_clean <- remove_missing_species(ind_measure, fish_diet_shift, pred_win)
 ```
 
 ## Step 3: Compute size classes
 
 ```{r}
-## Global variable
-NUM_CLASSES <- 3
-
 ## Compute size classes
-tab_size_classes <- compute_size_classes(ind_measure, NUM_CLASSES)
-head(tab_size_classes)
+size_classes <- compute_size_classes(
+  ind_measure = ind_clean,
+  num_classes = 5
+)
+
+head(size_classes)
 ```
 
 ## Step 4: Build metaweb from size classes
@@ -70,12 +71,11 @@ SELECTED_RESOURCES <- c("det", "biof", "phytob", "macroph", "phytopl", "zoopl", 
 
 ## Build metaweb
 metaweb <- build_metaweb(
-  tab_size_classes = tab_size_classes,
-  pred_win = pred_win,
-  fish_diet_shift = fish_diet_shift,
+  tab_size_classes    = size_classes,
+  pred_win            = pred_win,
+  fish_diet_shift     = fish_diet_shift,
   resource_diet_shift = resource_diet_shift,
-  num_classes = NUM_CLASSES,
-  selected_resources = SELECTED_RESOURCES
+  selected_resources  = SELECTED_RESOURCES
 )
 ```
 

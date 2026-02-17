@@ -2,7 +2,7 @@
 % Please edit documentation in R/metaweb_builder.R
 \name{compute_size_classes}
 \alias{compute_size_classes}
-\title{Compute Size Class Boundaries for Each Species}
+\title{Compute size class boundaries for each species}
 \usage{
 compute_size_classes(ind_measure, num_classes)
 }

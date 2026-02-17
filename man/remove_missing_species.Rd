@@ -2,7 +2,7 @@
 % Please edit documentation in R/metaweb_builder.R
 \name{remove_missing_species}
 \alias{remove_missing_species}
-\title{Remove Species with Missing Data Across Input Tables}
+\title{Remove Species with missing data across input tables}
 \usage{
 remove_missing_species(ind_measure, fish_diet_shift, pred_win)
 }

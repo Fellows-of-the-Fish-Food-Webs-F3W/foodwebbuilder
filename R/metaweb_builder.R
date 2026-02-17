@@ -218,7 +218,6 @@ compute_size_classes <- function(ind_measure, num_classes) {
 #'
 #' @examples
 #' \dontrun{
-#' \dontrun{
 #' # 1) Load packaged example datasets
 #' data(ind_measure)
 #' data(fish_diet_shift)
@@ -242,7 +241,8 @@ compute_size_classes <- function(ind_measure, num_classes) {
 #'   pred_win              = pred_win,
 #'   fish_diet_shift       = fish_diet_shift,
 #'   resource_diet_shift   = resource_diet_shift,
-#'   num_classes           = 5,               # optional (used as a consistency check), must match tab_size_classes
+#'   num_classes           = 5, # optional consistency check
+#'                              # (must match tab_size_classes)
 #'   selected_resources    = c("zoopl", "phytopl")
 #' )
 #'

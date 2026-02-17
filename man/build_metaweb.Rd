@@ -2,14 +2,14 @@
 % Please edit documentation in R/metaweb_builder.R
 \name{build_metaweb}
 \alias{build_metaweb}
-\title{Build a Metaweb Interaction Network}
+\title{Build a trophic metaweb}
 \usage{
 build_metaweb(
   tab_size_classes,
   pred_win,
   fish_diet_shift,
   resource_diet_shift,
-  num_classes,
+  num_classes = NULL,
   selected_resources
 )
 }
@@ -32,8 +32,8 @@ interactions (e.g., basal resource dependencies). Must include one row per
 resource and columns corresponding to the resources listed in
 \code{selected_resources}.}
 
-\item{num_classes}{Integer indicating the number of size classes per species,
-matching the value used in \code{\link[=compute_size_classes]{compute_size_classes()}}.}
+\item{num_classes}{Optional integer. If provided, it is used ONLY as a consistency check
+against \code{tab_size_classes} (source of truth). If inconsistent, the function errors.}
 
 \item{selected_resources}{Character vector giving the names of resource
 types (columns) to include in the metaweb.}
@@ -66,18 +66,41 @@ integrating all modeled size classes and resource categories.
 }
 \examples{
 \dontrun{
-metaweb <- build_metaweb(
-  tab_size_classes = size_classes,
-  pred_win = predation_window,
-  fish_diet_shift = fish_diet_data,
-  resource_diet_shift = resource_links,
-  num_classes = 5,
-  selected_resources = c("zoopl", "phytopl")
+# 1) Load packaged example datasets
+data(ind_measure)
+data(fish_diet_shift)
+data(pred_win)
+data(resource_diet_shift)
+
+# 2) Ensure consistency of species across inputs
+ind_clean <- remove_missing_species(
+  ind_measure     = ind_measure,
+  fish_diet_shift = fish_diet_shift,
+  pred_win        = pred_win
 )
+
+# 3) Choose number of size classes once
+tab_size_classes <- compute_size_classes(ind_clean, num_classes = 5)
+
+# 4) Build metaweb
+
+metaweb <- build_metaweb(
+  tab_size_classes      = tab_size_classes,
+  pred_win              = pred_win,
+  fish_diet_shift       = fish_diet_shift,
+  resource_diet_shift   = resource_diet_shift,
+  num_classes           = 5, # optional consistency check
+                             # (must match tab_size_classes)
+  selected_resources    = c("zoopl", "phytopl")
+)
+
 dim(metaweb)
+metaweb[1:5, 1:5]
 }
 
 }
 \seealso{
+\code{\link[=remove_missing_species]{remove_missing_species()}}, \code{\link[=compute_size_classes]{compute_size_classes()}}
+
 \code{\link[=remove_missing_species]{remove_missing_species()}}, \code{\link[=compute_size_classes]{compute_size_classes()}}
 }
