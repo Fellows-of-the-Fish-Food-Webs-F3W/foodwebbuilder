@@ -2,7 +2,8 @@ test_that("fish_diet_shift has expected structure", {
   data(fish_diet_shift, package = "foodwebbuilder")
   expected_cols <- c(
     "species_code", "species_name", "size_min", "size_max", "stage",
-    "light", "det", "biof", "phytob", "macroph", "phytopl", "zoopl", "zoob", "fish"
+    "light", "det", "biof", "phytob", "macroph",
+    "phytopl", "zoopl", "zoob", "fish"
   )
   expect_true(all(expected_cols %in% names(fish_diet_shift)))
   expect_s3_class(fish_diet_shift, "data.frame")
@@ -32,7 +33,8 @@ test_that("resource_diet_shift has expected structure", {
   data(resource_diet_shift, package = "foodwebbuilder")
   expected_cols <- c(
     "species_code", "taxon_name", "size_min", "size_max", "stage",
-    "light", "det", "biof", "phytob", "macroph", "phytopl", "zoopl", "zoob", "fish"
+    "light", "det", "biof", "phytob", "macroph",
+    "phytopl", "zoopl", "zoob", "fish"
   )
   expect_true(all(expected_cols %in% names(resource_diet_shift)))
   expect_s3_class(resource_diet_shift, "data.frame")

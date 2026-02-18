@@ -79,8 +79,10 @@ remove_missing_species <- function(ind_measure, fish_diet_shift, pred_win) {
   missing <- setdiff(sp_ind, intersect(sp_diet, sp_pred))
 
   if (length(missing) > 0) {
-    message("Missing species found and removed: ", paste(missing, collapse = " "))
-    ind_measure <- ind_measure[!(ind_measure$species_code %in% missing), , drop = FALSE]
+    message("Missing species found and removed: ",
+            paste(missing, collapse = " "))
+    ind_measure <- ind_measure[!(ind_measure$species_code %in% missing), ,
+                               drop = FALSE]
   } else {
     message("No missing species found (nothing removed).")
   }
@@ -127,7 +129,8 @@ compute_size_classes <- function(ind_measure, num_classes) {
   .assert_has_cols(ind_measure, c("species_code", "size"), "ind_measure")
 
   if (length(num_classes) != 1 || is.na(num_classes) || num_classes < 1) {
-    stop("num_classes must be a single integer >= 1.", call. = FALSE)
+    stop("num_classes must be a single integer >= 1.",
+         call. = FALSE)
   }
   num_classes <- as.integer(num_classes)
 
@@ -139,7 +142,8 @@ compute_size_classes <- function(ind_measure, num_classes) {
     x <- x[!is.na(x)]
 
     if (length(x) == 0) {
-      stop("Species '", sp, "' has no non-missing size values in ind_measure.", call. = FALSE)
+      stop("Species '", sp, "' has no non-missing size values in ind_measure.",
+           call. = FALSE)
     }
 
     size_max <- max(x)
@@ -153,7 +157,8 @@ compute_size_classes <- function(ind_measure, num_classes) {
 
     upper <- breaks[-1]
 
-    c(species_code = sp, lower_bound = 0, stats::setNames(upper, paste0("upper_bound_", seq_len(num_classes))))
+    c(species_code = sp, lower_bound = 0,
+      stats::setNames(upper, paste0("upper_bound_", seq_len(num_classes))))
   })
 
   out <- do.call(rbind, out)
@@ -191,8 +196,10 @@ compute_size_classes <- function(ind_measure, num_classes) {
 #'   interactions (e.g., basal resource dependencies). Must include one row per
 #'   resource and columns corresponding to the resources listed in
 #'   `selected_resources`.
-#' @param num_classes Optional integer. If provided, it is used ONLY as a consistency check
-#'   against `tab_size_classes` (source of truth). If inconsistent, the function errors.
+#' @param num_classes Optional integer.
+#'   If provided, it is used ONLY as a consistency check
+#'   against `tab_size_classes` (source of truth).
+#'   If inconsistent, the function errors.
 #' @param selected_resources Character vector giving the names of resource
 #'   types (columns) to include in the metaweb.
 #'
@@ -261,14 +268,19 @@ build_metaweb <- function(tab_size_classes,
                           selected_resources) {
 
   ## ---- Basic validation ----
-  .assert_has_cols(tab_size_classes, c("species_code", "lower_bound"), "tab_size_classes")
-  .assert_has_cols(pred_win, c("species_code", "beta_min", "beta_max"), "pred_win")
-  .assert_has_cols(fish_diet_shift, c("species_code", "size_min", "size_max", "fish"), "fish_diet_shift")
+  .assert_has_cols(tab_size_classes, c("species_code", "lower_bound"),
+                   "tab_size_classes")
+  .assert_has_cols(pred_win, c("species_code", "beta_min", "beta_max"),
+                   "pred_win")
+  .assert_has_cols(fish_diet_shift,
+                   c("species_code", "size_min", "size_max", "fish"),
+                   "fish_diet_shift")
   .assert_has_cols(resource_diet_shift, "species_code", "resource_diet_shift")
 
   if (ncol(tab_size_classes) < 3) {
     stop(
-      "tab_size_classes must have at least 3 columns: species_code, lower_bound, upper_bound_1",
+      "tab_size_classes must have at least 3 columns: ",
+      "species_code, lower_bound, upper_bound_1",
       call. = FALSE
     )
   }
@@ -277,15 +289,17 @@ build_metaweb <- function(tab_size_classes,
 
   if (!is.null(num_classes)) {
     if (length(num_classes) != 1 || is.na(num_classes) || num_classes < 1) {
-      stop("num_classes must be a single integer >= 1 (or NULL).", call. = FALSE)
+      stop("num_classes must be a single integer >= 1 (or NULL).",
+           call. = FALSE)
     }
     num_classes <- as.integer(num_classes)
 
     if (!identical(num_classes, inferred_num_classes)) {
       stop(
         "Inconsistent 'num_classes': you passed ", num_classes,
-        " but tab_size_classes implies ", inferred_num_classes, ". ",
-        "Rebuild tab_size_classes with compute_size_classes(..., num_classes = ", num_classes, ") ",
+        ", but tab_size_classes implies ", inferred_num_classes, ". ",
+        "Rebuild tab_size_classes with compute_size_classes(",
+        "..., num_classes = ", num_classes, ") ",
         "or omit num_classes here.",
         call. = FALSE
       )
@@ -295,14 +309,17 @@ build_metaweb <- function(tab_size_classes,
   num_classes <- inferred_num_classes
 
   if (length(selected_resources) == 0) {
-    stop("selected_resources must be a non-empty character vector.", call. = FALSE)
+    stop("selected_resources must be a non-empty character vector.",
+         call. = FALSE)
   }
   if (!is.character(selected_resources)) {
-    stop("selected_resources must be a character vector.", call. = FALSE)
+    stop("selected_resources must be a character vector.",
+         call. = FALSE)
   }
 
   # Verify selected_resources exist in both diet tables (fish and resource)
-  available_cols <- intersect(colnames(fish_diet_shift), colnames(resource_diet_shift))
+  available_cols <- intersect(colnames(fish_diet_shift),
+                              colnames(resource_diet_shift))
   missing_cols <- setdiff(selected_resources, available_cols)
   if (length(missing_cols) > 0) {
     stop(
@@ -313,12 +330,14 @@ build_metaweb <- function(tab_size_classes,
     )
   }
 
-  # Verify selected_resources are also present as resource nodes (rows) in resource_diet_shift
+  # Verify selected_resources are also present
+  # as resource nodes (rows) in resource_diet_shift
   missing_nodes <- setdiff(selected_resources, resource_diet_shift$species_code)
   if (length(missing_nodes) > 0) {
     stop(
-      "The following selected_resources are present as columns but not as resource nodes ",
-      "in resource_diet_shift$species_code: ",
+      "The following selected_resources are present as columns ",
+      "but not as resource nodes in ",
+      "resource_diet_shift$species_code: ",
       paste(missing_nodes, collapse = ", "),
       call. = FALSE
     )
@@ -328,11 +347,14 @@ build_metaweb <- function(tab_size_classes,
   species_code <- tab_size_classes$species_code
 
   # Lower bounds per class are: lower_bound + all but the last upper bounds
-  lb_size_classes <- as.numeric(t(as.matrix(tab_size_classes[, -c(1, ncol(tab_size_classes)), drop = FALSE])))
-  ub_size_classes <- as.numeric(t(as.matrix(tab_size_classes[, -c(1, 2), drop = FALSE])))
+  lb_size_classes <- as.numeric(t(as.matrix(
+    tab_size_classes[, -c(1, ncol(tab_size_classes)), drop = FALSE])))
+  ub_size_classes <- as.numeric(t(as.matrix(
+    tab_size_classes[, -c(1, 2), drop = FALSE])))
 
   if (length(lb_size_classes) != length(ub_size_classes)) {
-    stop("tab_size_classes has inconsistent lower/upper bounds formatting.", call. = FALSE)
+    stop("tab_size_classes has inconsistent lower/upper bounds formatting.",
+         call. = FALSE)
   }
 
   mp_size_classes <- 0.5 * (ub_size_classes + lb_size_classes)
@@ -366,10 +388,14 @@ build_metaweb <- function(tab_size_classes,
 
   ## ---- Potential fish-fish interactions (size window overlap) ----
   # Matrix prey x predator
-  ff <- (outer(mp_size_classes, lb_prey, `>=`) & outer(mp_size_classes, ub_prey, `<`))
+  ff <- (
+    outer(mp_size_classes, lb_prey, `>=`) &
+      outer(mp_size_classes, ub_prey, `<`)
+  )
   ff <- .as_01_numeric(ff, "ff_interactions")
 
-  dimnames(ff) <- list(prey = trophic_species_code, predator = trophic_species_code)
+  dimnames(ff) <- list(prey = trophic_species_code,
+                       predator = trophic_species_code)
 
   ## ---- Piscivory status per trophic species (predator filter) ----
   diet_by_sp <- split(fish_diet_shift, fish_diet_shift$species_code)
@@ -389,7 +415,9 @@ build_metaweb <- function(tab_size_classes,
   }
 
   piscivory <- numeric(length(trophic_species_code))
-  rf_mat <- matrix(0, nrow = length(selected_resources), ncol = length(trophic_species_code))
+  rf_mat <- matrix(0,
+                   nrow = length(selected_resources),
+                   ncol = length(trophic_species_code))
   rownames(rf_mat) <- selected_resources
   colnames(rf_mat) <- trophic_species_code
 
@@ -405,7 +433,10 @@ build_metaweb <- function(tab_size_classes,
       )
     }
 
-    row_i <- get_row_for_size(df, mp_size_classes[i], sp, trophic_species_code[i])
+    row_i <- get_row_for_size(df,
+                              mp_size_classes[i],
+                              sp,
+                              trophic_species_code[i])
 
     piscivory[i] <- .as_01_numeric(row_i[["fish"]], "fish_diet_shift$fish")
 
@@ -428,7 +459,8 @@ build_metaweb <- function(tab_size_classes,
   if (any(is.na(row_idx))) {
     missing_res <- selected_resources[is.na(row_idx)]
     stop(
-      "The following selected_resources are not found in resource_diet_shift$species_code: ",
+      "The following selected_resources are not found ",
+      "in resource_diet_shift$species_code: ", ,
       paste(missing_res, collapse = ", "),
       call. = FALSE
     )
@@ -455,7 +487,8 @@ build_metaweb <- function(tab_size_classes,
 
   # Final sanity: square + consistent dimnames
   if (nrow(metaweb) != ncol(metaweb)) {
-    stop("Internal error: assembled metaweb is not square.", call. = FALSE)
+    stop("Internal error: assembled metaweb is not square.",
+         call. = FALSE)
   }
   if (!identical(rownames(metaweb), colnames(metaweb))) {
     # enforce identical ordering

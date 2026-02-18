@@ -67,7 +67,8 @@ head(size_classes)
 
 ```{r}
 ## Global variable
-SELECTED_RESOURCES <- c("det", "biof", "phytob", "macroph", "phytopl", "zoopl", "zoob")
+selected_resources <- c("det", "biof", "phytob", "macroph",
+                        "phytopl", "zoopl", "zoob")
 
 ## Build metaweb
 metaweb <- build_metaweb(
@@ -75,7 +76,7 @@ metaweb <- build_metaweb(
   pred_win            = pred_win,
   fish_diet_shift     = fish_diet_shift,
   resource_diet_shift = resource_diet_shift,
-  selected_resources  = SELECTED_RESOURCES
+  selected_resources  = selected_resources
 )
 ```
 
@@ -88,7 +89,7 @@ image(
   ylim = c(1, 0),
   col = colorRampPalette(c("blue", "white", "red"))(100),
   main = "Global Metaweb",
-  axes = F
+  axes = FALSE
 )
 
 ## Add custom axes with labels

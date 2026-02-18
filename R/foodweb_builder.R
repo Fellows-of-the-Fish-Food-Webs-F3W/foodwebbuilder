@@ -25,11 +25,13 @@
 
 .infer_num_classes <- function(tab_size_classes) {
   if (!("species_code" %in% colnames(tab_size_classes))) {
-    stop("tab_size_classes must contain a 'species_code' column.", call. = FALSE)
+    stop("tab_size_classes must contain a 'species_code' column.",
+         call. = FALSE)
   }
   if (ncol(tab_size_classes) < 3) {
     stop(
-      "tab_size_classes must have at least 3 columns: species_code, lower_bound, upper_bound_1",
+      "tab_size_classes must have at least three columns: ",
+      "species_code, lower_bound, upper_bound_1",
       call. = FALSE
     )
   }
@@ -50,7 +52,9 @@
 
   # Lower bounds per class: lower_bound + upper_bound_1..upper_bound_(K-1)
   lb <- as.numeric(
-    t(as.matrix(tab_size_classes[, -c(1, ncol(tab_size_classes)), drop = FALSE]))
+    t(as.matrix(
+      tab_size_classes[, -c(1, ncol(tab_size_classes)),
+                       drop = FALSE]))
   )
   ub <- as.numeric(
     t(as.matrix(tab_size_classes[, -c(1, 2), drop = FALSE]))
@@ -102,8 +106,9 @@
 #' 3. Subsets the metaweb to keep only present trophic species + resources.
 #'
 #' The number of size classes is inferred from `tab_size_classes`.
-#' Users wishing to change the number of size classes should regenerate
-#' `tab_size_classes` with [compute_size_classes()] and re-run [build_metaweb()].
+#' Users wishing to change the number of size classes should
+#' regenerate `tab_size_classes` with [compute_size_classes()]
+#' and re-run [build_metaweb()].
 #'
 #' @examples
 #' \dontrun{
@@ -135,26 +140,31 @@ build_local_foodweb <- function(ind_measure,
 
   ## ---- Validate inputs ----
   if (!is.character(local_id) || length(local_id) != 1 || is.na(local_id)) {
-    stop("local_id must be a single non-missing character string.", call. = FALSE)
+    stop("local_id must be a single non-missing character string.",
+         call. = FALSE)
   }
 
   required_cols <- c(local_id, "species_code", "size")
   .assert_has_cols(ind_measure, required_cols, "ind_measure")
 
   if (is.null(rownames(metaweb)) || is.null(colnames(metaweb))) {
-    stop("metaweb must have rownames and colnames (node names).", call. = FALSE)
+    stop("metaweb must have rownames and colnames (node names).",
+         call. = FALSE)
   }
   if (!identical(rownames(metaweb), colnames(metaweb))) {
-    stop("metaweb must be square with identical row and column names.", call. = FALSE)
+    stop("metaweb must be square with identical row and column names.",
+         call. = FALSE)
   }
 
   if (!is.character(selected_resources) || length(selected_resources) == 0) {
-    stop("selected_resources must be a non-empty character vector.", call. = FALSE)
+    stop("selected_resources must be a non-empty character vector.",
+         call. = FALSE)
   }
   missing_res <- setdiff(selected_resources, rownames(metaweb))
   if (length(missing_res) > 0) {
     stop(
-      "The following selected_resources are not present in metaweb node names: ",
+      "The following selected_resources are not present ",
+      "in metaweb node names: ",
       paste(missing_res, collapse = ", "),
       call. = FALSE
     )
@@ -171,7 +181,8 @@ build_local_foodweb <- function(ind_measure,
 
   if (length(trophic_species) != length(lb) || length(lb) != length(ub)) {
     stop(
-      "Internal inconsistency: trophic species codes and bounds are misaligned. ",
+      "Internal inconsistency: trophic species codes ",
+      "and bounds are misaligned. ",
       "Check tab_size_classes formatting.",
       call. = FALSE
     )
@@ -182,7 +193,7 @@ build_local_foodweb <- function(ind_measure,
   ts_index_by_species <- split(seq_along(trophic_species), species_of_ts)
 
   ## ---- Helper: compute locally present trophic species ----
-  # This version is efficient and avoids per-individual loops by grouping by species
+  # This version avoids per-individual loops by grouping by species
   present_trophic_species <- function(df_local) {
 
     present <- logical(length(trophic_species))
@@ -199,8 +210,8 @@ build_local_foodweb <- function(ind_measure,
       sizes <- sizes[!is.na(sizes)]
       if (length(sizes) == 0) next
 
-      # For each trophic class (idx), check if any size falls in [lb, ub)
-      # We do it class-by-class (K is typically small), which is fast and simple.
+      # For each trophic class (idx), check if any size falls in [lb, ub]
+      # We do it class-by-class (K is typically small), which is fast and simple
       for (k in idx) {
         if (any(sizes >= lb[k] & sizes < ub[k])) present[k] <- TRUE
       }
@@ -214,13 +225,17 @@ build_local_foodweb <- function(ind_measure,
 
   results <- lapply(local_units, function(id) {
 
-    df_local <- ind_measure[ind_measure[[local_id]] == id, c("species_code", "size"), drop = FALSE]
+    df_local <- ind_measure[
+      ind_measure[[local_id]] == id,
+      c("species_code", "size"),
+      drop = FALSE
+    ]
 
     ts_present <- present_trophic_species(df_local)
 
     keep <- c(ts_present, selected_resources)
 
-    # Keep only nodes that exist in metaweb (defensive against upstream trimming)
+    # Keep only nodes that exist in metaweb
     keep <- intersect(keep, rownames(metaweb))
 
     metaweb[keep, keep, drop = FALSE]

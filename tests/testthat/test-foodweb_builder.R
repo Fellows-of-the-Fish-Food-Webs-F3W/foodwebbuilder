@@ -76,7 +76,9 @@ testthat::test_that("build_local_foodweb handles small example data", {
   testthat::expect_identical(rownames(local_fw), colnames(local_fw))
 })
 
-testthat::test_that("build_local_foodweb errors if required columns are missing", {
+testthat::test_that(
+  "build_local_foodweb errors if required columns are missing",
+  {
 
   # Missing 'species_code' column (we use 'species' instead)
   ind_measure <- data.frame(
@@ -106,7 +108,9 @@ testthat::test_that("build_local_foodweb errors if required columns are missing"
   )
 })
 
-testthat::test_that("build_local_foodweb errors when selected_resources is empty", {
+testthat::test_that(
+  "build_local_foodweb errors when selected_resources is empty",
+  {
 
   ind_measure <- data.frame(
     local_id     = c("site1"),

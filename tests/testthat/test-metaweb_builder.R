@@ -1,4 +1,6 @@
-testthat::test_that("remove_missing_species keeps all species when data is complete", {
+testthat::test_that(
+  "remove_missing_species keeps all species when data is complete",
+  {
   ind_measure <- data.frame(
     species_code = c("A", "B", "A"),
     size = c(1, 2, 3)
@@ -23,7 +25,9 @@ testthat::test_that("remove_missing_species keeps all species when data is compl
   testthat::expect_equal(sort(res$species_code), sort(ind_measure$species_code))
 })
 
-testthat::test_that("remove_missing_species removes species missing in reference tables", {
+testthat::test_that(
+  "remove_missing_species removes species missing in reference tables",
+  {
   ind_measure <- data.frame(
     species_code = c("A", "B", "C", "A"),
     size = c(1, 2, 3, 4)
@@ -49,7 +53,9 @@ testthat::test_that("remove_missing_species removes species missing in reference
   testthat::expect_equal(nrow(res), 3)  # only rows for A and B
 })
 
-testthat::test_that("compute_size_classes returns expected columns and structure", {
+testthat::test_that(
+  "compute_size_classes returns expected columns and structure",
+  {
   ind_measure <- data.frame(
     species_code = c("A", "A", "B", "B"),
     size = c(5, 10, 8, 16)
@@ -70,7 +76,9 @@ testthat::test_that("compute_size_classes returns expected columns and structure
   testthat::expect_true(is.numeric(res$upper_bound_2))
 })
 
-testthat::test_that("compute_size_classes correctly splits size range per species", {
+testthat::test_that(
+  "compute_size_classes correctly splits size range per species",
+  {
   ind_measure <- data.frame(
     species_code = c("A", "A", "B", "B"),
     size = c(0, 10, 0, 20)
@@ -78,18 +86,20 @@ testthat::test_that("compute_size_classes correctly splits size range per specie
 
   res <- compute_size_classes(ind_measure, num_classes = 2)
 
-  row_A <- res[res$species_code == "A", ]
+  row_a <- res[res$species_code == "A", ]
   testthat::expect_equal(as.numeric(row_A[1, "lower_bound"]), 0)
   testthat::expect_equal(as.numeric(row_A[1, "upper_bound_1"]), 5)
   testthat::expect_equal(as.numeric(row_A[1, "upper_bound_2"]), 10)
 
-  row_B <- res[res$species_code == "B", ]
+  row_b <- res[res$species_code == "B", ]
   testthat::expect_equal(as.numeric(row_B[1, "lower_bound"]), 0)
   testthat::expect_equal(as.numeric(row_B[1, "upper_bound_1"]), 10)
   testthat::expect_equal(as.numeric(row_B[1, "upper_bound_2"]), 20)
 })
 
-testthat::test_that("build_metaweb builds a square matrix with consistent dimnames", {
+testthat::test_that(
+  "build_metaweb builds a square matrix with consistent dimnames",
+  {
   # 2 fish species, 2 size classes each -> 4 trophic species
   tab_size_classes <- data.frame(
     species_code  = c("A", "B"),
@@ -141,7 +151,9 @@ testthat::test_that("build_metaweb builds a square matrix with consistent dimnam
   testthat::expect_true(all(is.finite(mw)))
 })
 
-testthat::test_that("build_metaweb errors when selected_resources are not valid columns", {
+testthat::test_that(
+  "build_metaweb errors when selected_resources are not valid columns",
+  {
   tab_size_classes <- data.frame(
     species_code  = c("A", "B"),
     lower_bound   = c(0, 0),
@@ -183,7 +195,9 @@ testthat::test_that("build_metaweb errors when selected_resources are not valid 
   )
 })
 
-testthat::test_that("build_metaweb errors when selected_resources are not found as resource nodes", {
+testthat::test_that(
+  "build_metaweb errors when selected_resources are not found as resource nodes",
+  {
   tab_size_classes <- data.frame(
     species_code  = c("A"),
     lower_bound   = c(0),
@@ -225,7 +239,9 @@ testthat::test_that("build_metaweb errors when selected_resources are not found 
   )
 })
 
-testthat::test_that("build_metaweb errors when num_classes does not match tab_size_classes", {
+testthat::test_that(
+  "build_metaweb errors when num_classes does not match tab_size_classes",
+  {
   tab_size_classes <- data.frame(
     species_code  = c("A"),
     lower_bound   = c(0),
