@@ -10,7 +10,9 @@ build_metaweb(
   fish_diet_shift,
   resource_diet_shift,
   num_classes = NULL,
-  selected_resources
+  selected_resources,
+  method_pw = "mp",
+  method_ff = "mp"
 )
 }
 \arguments{
@@ -32,11 +34,21 @@ interactions (e.g., basal resource dependencies). Must include one row per
 resource and columns corresponding to the resources listed in
 \code{selected_resources}.}
 
-\item{num_classes}{Optional integer. If provided, it is used ONLY as a consistency check
-against \code{tab_size_classes} (source of truth). If inconsistent, the function errors.}
+\item{num_classes}{Optional integer.
+If provided, it is used ONLY as a consistency check
+against \code{tab_size_classes} (source of truth).
+If inconsistent, the function errors.}
 
 \item{selected_resources}{Character vector giving the names of resource
 types (columns) to include in the metaweb.}
+
+\item{method_pw}{String indicating which method to use for building predation
+windows. There are two options: \code{mp}, which uses the midpoint of size classes,
+or \code{bounds}, which uses the lower and upper bounds.}
+
+\item{method_ff}{String indicating which method to use for building fish-fish
+interactions. There are two options: \code{mp}, which uses the midpoint of size classes,
+or \code{bounds}, which uses the lower and upper bounds.}
 }
 \value{
 A square adjacency matrix (data frame or matrix) representing all potential

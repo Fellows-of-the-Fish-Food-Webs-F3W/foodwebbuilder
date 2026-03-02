@@ -87,14 +87,14 @@ testthat::test_that(
   res <- compute_size_classes(ind_measure, num_classes = 2)
 
   row_a <- res[res$species_code == "A", ]
-  testthat::expect_equal(as.numeric(row_A[1, "lower_bound"]), 0)
-  testthat::expect_equal(as.numeric(row_A[1, "upper_bound_1"]), 5)
-  testthat::expect_equal(as.numeric(row_A[1, "upper_bound_2"]), 10)
+  testthat::expect_equal(as.numeric(row_a[1, "lower_bound"]), 0)
+  testthat::expect_equal(as.numeric(row_a[1, "upper_bound_1"]), 5)
+  testthat::expect_equal(as.numeric(row_a[1, "upper_bound_2"]), 10)
 
   row_b <- res[res$species_code == "B", ]
-  testthat::expect_equal(as.numeric(row_B[1, "lower_bound"]), 0)
-  testthat::expect_equal(as.numeric(row_B[1, "upper_bound_1"]), 10)
-  testthat::expect_equal(as.numeric(row_B[1, "upper_bound_2"]), 20)
+  testthat::expect_equal(as.numeric(row_b[1, "lower_bound"]), 0)
+  testthat::expect_equal(as.numeric(row_b[1, "upper_bound_1"]), 10)
+  testthat::expect_equal(as.numeric(row_b[1, "upper_bound_2"]), 20)
 })
 
 testthat::test_that(

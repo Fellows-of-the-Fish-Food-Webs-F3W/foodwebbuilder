@@ -76,6 +76,7 @@ metaweb <- build_metaweb(
   pred_win            = pred_win,
   fish_diet_shift     = fish_diet_shift,
   resource_diet_shift = resource_diet_shift,
+  num_classes         = 5,
   selected_resources  = selected_resources
 )
 ```
@@ -89,7 +90,7 @@ local_foodwebs <- build_local_foodweb(
   local_id          = "operation_id",         # column in ind_measure
   metaweb           = metaweb,
   tab_size_classes  = size_classes,
-  selected_resources  = selected_resource
+  selected_resources  = selected_resources
 )
 
 ## Inspect how many local food webs were built

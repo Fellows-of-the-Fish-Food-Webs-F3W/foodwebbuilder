@@ -1,0 +1,153 @@
+---
+title: "Visualising Trophic Networks"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Foodweb Builder}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+## Figure options
+knitr::opts_chunk$set(
+  fig.width = 8,
+  fig.height = 6,
+  fig.align = "center",
+  dpi = 150
+)
+
+## Load libraries
+library(foodwebbuilder)
+```
+
+# Overview
+
+This vignette illustrates how to build a metaweb and visualise trophic networks using `foodwebbuilder`.
+
+# Load Data
+
+```{r}
+data(ind_measure)
+data(fish_diet_shift)
+data(resource_diet_shift)
+data(pred_win)
+
+head(ind_measure)
+head(fish_diet_shift)
+head(resource_diet_shift)
+head(pred_win)
+```
+
+# Build the Metaweb
+
+```{r}
+NUM_CLASSES <- 3
+SELECTED_RESOURCES <- c("det", "biof", "phytob", "macroph",
+                        "phytopl", "zoopl", "zoob")
+
+ind_measure <- remove_missing_species(ind_measure,
+                                      fish_diet_shift,
+                                      pred_win)
+
+tab_size_classes <- compute_size_classes(ind_measure, NUM_CLASSES)
+
+metaweb <- build_metaweb(tab_size_classes,
+                         pred_win,
+                         fish_diet_shift,
+                         resource_diet_shift,
+                         NUM_CLASSES,
+                         SELECTED_RESOURCES,
+                         method_pw = "mp",
+                         method_ff = "mp")
+```
+
+```{r}
+image(t(as.matrix(metaweb)),
+      ylim = c(1, 0),
+      col = colorRampPalette(c("blue", "white", "red"))(100))
+```
+
+# Compute Network Metrics
+
+```{r}
+fluxes <- compute_bottom_up_fluxes(metaweb)
+barplot(fluxes, xlab = "Biomass Flux", horiz = TRUE, las = 1)
+
+get_basal_nodes(metaweb)
+get_leaf_nodes(metaweb)
+
+TL <- compute_trophic_level(metaweb)
+TB <- compute_trophic_breadth(metaweb, TL)
+
+degree_in  <- compute_inward_degree(metaweb)
+degree_out <- compute_outward_degree(metaweb)
+```
+
+# Visualisations
+
+```{r}
+plot_network(metaweb,
+             x = degree_out,
+             y = degree_in,
+             labels = colnames(metaweb),
+             xlab = "Outward Degree",
+             ylab = "Inward Degree",
+             label_space_x = 0.1)
+
+plot_network(metaweb,
+             x = TB,
+             y = TL,
+             labels = colnames(metaweb),
+             xlab = "Trophic Breadth",
+             ylab = "Trophic Level",
+             add_legend = "bottomright",
+             label_space_x = 0.1)
+```
+
+## Flux Visualisation
+
+```{r}
+plot_network(fluxes,
+             x = degree_out,
+             y = degree_in,
+             labels = colnames(metaweb),
+             label_space_x = 0.1,
+             line_width_max = 2)
+
+plot_network(fluxes,
+             x = TB,
+             y = TL,
+             labels = colnames(metaweb),
+             add_legend = "bottomright",
+             label_space_x = 0.1,
+             line_width_max = 2)
+```
+
+## Radial Layout
+
+```{r}
+plot_network_radial(fluxes,
+                    x = TL,
+                    labels = colnames(metaweb),
+                    rotations = 0.975,
+                    line_width_max = 1)
+
+plot_network_radial(fluxes,
+                    x = degree_in,
+                    labels = colnames(metaweb),
+                    rotations = 0.5,
+                    scale = 1.25,
+                    line_width_max = 1)
+
+plot_network_radial(fluxes,
+                    x = TL,
+                    y = TL,
+                    labels = colnames(metaweb),
+                    rotations = 1.5,
+                    scale = 1.25,
+                    line_width_max = 1)
+```
+
+```
+```
+

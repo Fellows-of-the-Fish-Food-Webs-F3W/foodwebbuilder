@@ -202,6 +202,12 @@ compute_size_classes <- function(ind_measure, num_classes) {
 #'   If inconsistent, the function errors.
 #' @param selected_resources Character vector giving the names of resource
 #'   types (columns) to include in the metaweb.
+#' @param method_pw String indicating which method to use for building predation
+#'   windows. There are two options: `mp`, which uses the midpoint of size classes, 
+#'   or `bounds`, which uses the lower and upper bounds. 
+#' @param method_ff String indicating which method to use for building fish-fish 
+#'   interactions. There are two options: `mp`, which uses the midpoint of size classes, 
+#'   or `bounds`, which uses the lower and upper bounds. 
 #'
 #' @return
 #' A square adjacency matrix (data frame or matrix) representing all potential
@@ -265,7 +271,9 @@ build_metaweb <- function(tab_size_classes,
                           fish_diet_shift,
                           resource_diet_shift,
                           num_classes = NULL,
-                          selected_resources) {
+                          selected_resources,
+                          method_pw="mp",
+                          method_ff="mp") {
 
   ## ---- Basic validation ----
   .assert_has_cols(tab_size_classes, c("species_code", "lower_bound"),
@@ -377,21 +385,57 @@ build_metaweb <- function(tab_size_classes,
   }
   pred_win_ <- pred_win[s, , drop = FALSE]
 
-  # reshape class midpoints as matrix (species x classes)
-  mp_mat <- matrix(mp_size_classes, ncol = num_classes, byrow = TRUE)
-
-  lb_prey_mat <- mp_mat * pred_win_$beta_min
-  ub_prey_mat <- mp_mat * pred_win_$beta_max
-
+  if (method_pw == "mp"){
+    # reshape class midpoints as matrix (species x classes)
+    mp_mat <- matrix(mp_size_classes, ncol = num_classes, byrow = TRUE)
+    lb_prey_mat <- mp_mat * pred_win_$beta_min
+    ub_prey_mat <- mp_mat * pred_win_$beta_max
+  } else {
+    if (method_pw == "bounds")
+    {
+      # reshape class bounds as matrix (species x classes)
+      lb_mat <- matrix(lb_size_classes, ncol = num_classes, byrow = TRUE)
+      ub_mat <- matrix(ub_size_classes, ncol = num_classes, byrow = TRUE)
+      lb_prey_mat <- lb_mat * pred_win_$beta_min
+      ub_prey_mat <- ub_mat * pred_win_$beta_max
+    } else
+    {
+      stop(
+        "The following predation window method is not recognised (method_pw): ",
+        paste(method_pw, ".\n"),
+        "Choose either mp or bounds.",
+        call. = FALSE
+      )
+    }
+  }
+  
+  ## Compute prey size ranges
   lb_prey <- as.numeric(t(lb_prey_mat))
   ub_prey <- as.numeric(t(ub_prey_mat))
-
+  
   ## ---- Potential fish-fish interactions (size window overlap) ----
   # Matrix prey x predator
-  ff <- (
-    outer(mp_size_classes, lb_prey, `>=`) &
-      outer(mp_size_classes, ub_prey, `<`)
-  )
+  if (method_ff == "mp"){
+    ff <- (
+      outer(mp_size_classes, lb_prey, `>=`) &
+        outer(mp_size_classes, ub_prey, `<`)
+    )    
+  } else {
+    if (method_ff == "bounds"){
+      ff <- (
+        outer(ub_size_classes, lb_prey, `>=`) &
+          outer(lb_size_classes, ub_prey, `<`)
+      )    
+    } else
+    {
+      stop(
+        "The following fish-fish interaction method is not recognised (method_ff): ",
+        paste(method_ff, ".\n"),
+        "Choose either mp or bounds.",
+        call. = FALSE
+      )
+    }
+  }
   ff <- .as_01_numeric(ff, "ff_interactions")
 
   dimnames(ff) <- list(prey = trophic_species_code,
@@ -467,7 +511,7 @@ build_metaweb <- function(tab_size_classes,
   }
 
   rr <- resource_diet_shift[row_idx, selected_resources, drop = FALSE]
-  rr <- as.matrix(rr)
+  rr <- t(as.matrix(rr))
   storage.mode(rr) <- "numeric"
   dimnames(rr) <- list(selected_resources, selected_resources)
 
