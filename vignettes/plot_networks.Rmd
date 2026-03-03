@@ -2,7 +2,7 @@
 title: "Visualising Trophic Networks"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Foodweb Builder}
+  %\VignetteIndexEntry{Visualising Trophic Networks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -22,7 +22,13 @@ library(foodwebbuilder)
 
 # Overview
 
-This vignette illustrates how to build a metaweb and visualise trophic networks using `foodwebbuilder`.
+This vignette shows how to:  
+1. Build a size-structured trophic metaweb from the example datasets shipped with `foodwebbuilder`.  
+2. Compute a few simple network metrics (trophic level, trophic breadth, degrees, bottom-up fluxes).  
+3. Visualise networks using Cartesian and radial layouts.  
+
+**Convention used throughout:**  
+the metaweb adjacency matrix is organised as *rows = prey/resources and columns = consumers/predators*.
 
 # Load Data
 
@@ -45,12 +51,15 @@ NUM_CLASSES <- 3
 SELECTED_RESOURCES <- c("det", "biof", "phytob", "macroph",
                         "phytopl", "zoopl", "zoob")
 
-ind_measure <- remove_missing_species(ind_measure,
+# Keep only species that exist consistently across inputs
+ind_clean <- remove_missing_species(ind_measure,
                                       fish_diet_shift,
                                       pred_win)
 
-tab_size_classes <- compute_size_classes(ind_measure, NUM_CLASSES)
+# Build size classes (species x size classes)
+tab_size_classes <- compute_size_classes(ind_clean, NUM_CLASSES)
 
+# Build metaweb (rows = prey/resources, cols = consumers/predators)
 metaweb <- build_metaweb(tab_size_classes,
                          pred_win,
                          fish_diet_shift,
@@ -61,91 +70,175 @@ metaweb <- build_metaweb(tab_size_classes,
                          method_ff = "mp")
 ```
 
+# Visualise the metaweb matrix
+
 ```{r}
-image(t(as.matrix(metaweb)),
-      ylim = c(1, 0),
-      col = colorRampPalette(c("blue", "white", "red"))(100))
+mat <- as.matrix(metaweb)
+
+old_par <- par(no.readonly = TRUE)
+on.exit(par(old_par), add = TRUE)
+
+par(mar = c(2, 10, 10, 2), xpd = NA)
+
+z <- mat[nrow(mat):1, , drop = FALSE]
+pal <- grDevices::colorRampPalette(c("blue", "white", "red"))(100)
+
+graphics::image(
+  x = seq_len(ncol(mat)),
+  y = seq_len(nrow(mat)),
+  z = t(z),
+  col = pal,
+  axes = FALSE,
+  xlab = "",
+  ylab = ""
+)
+
+graphics::box()
+
+# ticks only
+graphics::axis(3, at = seq_len(ncol(mat)), labels = FALSE, tck = -0.015)
+graphics::axis(2, at = seq_len(nrow(mat)), labels = FALSE, tck = -0.015)
+
+# draw all labels manually
+graphics::text(
+  x = seq_len(ncol(mat)),
+  y = nrow(mat) + 0.8,
+  labels = colnames(mat),
+  srt = 90, adj = 0, cex = 0.55
+)
+
+graphics::text(
+  x = -0.3,
+  y = seq_len(nrow(mat)),
+  labels = rev(rownames(mat)),
+  adj = 1, cex = 0.65
+)
+
+graphics::mtext("Global Metaweb", side = 3, line = 7.5, font = 2, cex = 1.2)
+graphics::mtext("Consumers / Predators (columns)", side = 3, line = 3.5, font = 2)
+graphics::mtext("Prey / Resources (rows)", side = 2, line = 4.5, font = 2)
 ```
 
-# Compute Network Metrics
+# Compute network metrics
 
 ```{r}
-fluxes <- compute_bottom_up_fluxes(metaweb)
-barplot(fluxes, xlab = "Biomass Flux", horiz = TRUE, las = 1)
+# Structural metrics
+basal_nodes <- get_basal_nodes(metaweb)
+leaf_nodes  <- get_leaf_nodes(metaweb)
 
-get_basal_nodes(metaweb)
-get_leaf_nodes(metaweb)
+degree_in  <- compute_inward_degree(metaweb)
+degree_out <- compute_outward_degree(metaweb)
 
 TL <- compute_trophic_level(metaweb)
 TB <- compute_trophic_breadth(metaweb, TL)
 
-degree_in  <- compute_inward_degree(metaweb)
-degree_out <- compute_outward_degree(metaweb)
+# Fluxes (matrix of accumulated bottom-up fluxes)
+fluxes <- compute_bottom_up_fluxes(metaweb)
+fluxes
+
+incoming_flux <- colSums(fluxes)  # received by consumers (columns)
+outgoing_flux <- rowSums(fluxes)  # emitted from prey/resources (rows)
+
+op <- par(no.readonly = TRUE)
+on.exit(par(op), add = TRUE)
+
+par(mfrow = c(1, 2), mar = c(5, 10, 2, 1))
+
+barplot(sort(incoming_flux, decreasing = TRUE),
+        horiz = TRUE, las = 1, cex.names = 0.6,
+        main = "Incoming flux per node")
+
+barplot(sort(outgoing_flux, decreasing = TRUE),
+        horiz = TRUE, las = 1, cex.names = 0.6,
+        main = "Outgoing flux per node")
+
+#barplot(fluxes, xlab = "Biomass Flux", horiz = TRUE, las = 1)
+
 ```
 
-# Visualisations
+# Network visualisations
+## Degree-based & Trophic metrics layout
 
 ```{r}
-plot_network(metaweb,
-             x = degree_out,
-             y = degree_in,
-             labels = colnames(metaweb),
-             xlab = "Outward Degree",
-             ylab = "Inward Degree",
-             label_space_x = 0.1)
+plot_network(
+  metaweb,
+  x = degree_out,
+  y = degree_in,
+  labels = colnames(metaweb),
+  xlab = "Outward degree (row sums)",
+  ylab = "Inward degree (column sums)",
+  label_space_x = 0.10
+)
 
-plot_network(metaweb,
-             x = TB,
-             y = TL,
-             labels = colnames(metaweb),
-             xlab = "Trophic Breadth",
-             ylab = "Trophic Level",
-             add_legend = "bottomright",
-             label_space_x = 0.1)
+plot_network(
+  metaweb,
+  x = TB,
+  y = TL,
+  labels = colnames(metaweb),
+  xlab = "Trophic breadth (sd of resource TL)",
+  ylab = "Trophic level",
+  add_legend = "bottomright",
+  label_space_x = 0.10
+)
 ```
 
-## Flux Visualisation
+## Flux visualisation
+When plotting 'fluxes', edge widths reflect flux magnitude (relative to the maximum absolute value).
 
 ```{r}
-plot_network(fluxes,
-             x = degree_out,
-             y = degree_in,
-             labels = colnames(metaweb),
-             label_space_x = 0.1,
-             line_width_max = 2)
+plot_network(
+  fluxes,
+  x = degree_out,
+  y = degree_in,
+  labels = colnames(metaweb),
+  xlab = "Outward degree",
+  ylab = "Inward degree",
+  label_space_x = 0.10,
+  line_width_max = 2
+)
 
-plot_network(fluxes,
-             x = TB,
-             y = TL,
-             labels = colnames(metaweb),
-             add_legend = "bottomright",
-             label_space_x = 0.1,
-             line_width_max = 2)
+plot_network(
+  fluxes,
+  x = TB,
+  y = TL,
+  labels = colnames(metaweb),
+  xlab = "Trophic breadth",
+  ylab = "Trophic level",
+  add_legend = "bottomright",
+  label_space_x = 0.10,
+  line_width_max = 2
+)
 ```
 
 ## Radial Layout
 
 ```{r}
-plot_network_radial(fluxes,
-                    x = TL,
-                    labels = colnames(metaweb),
-                    rotations = 0.975,
-                    line_width_max = 1)
+plot_network_radial(
+  fluxes,
+  x = TL,
+  labels = colnames(metaweb),
+  rotations = 0.975,
+  line_width_max = 1
+)
 
-plot_network_radial(fluxes,
-                    x = degree_in,
-                    labels = colnames(metaweb),
-                    rotations = 0.5,
-                    scale = 1.25,
-                    line_width_max = 1)
+plot_network_radial(
+  fluxes,
+  x = degree_in,
+  labels = colnames(metaweb),
+  rotations = 0.5,
+  scale = 1.25,
+  line_width_max = 1
+)
 
-plot_network_radial(fluxes,
-                    x = TL,
-                    y = TL,
-                    labels = colnames(metaweb),
-                    rotations = 1.5,
-                    scale = 1.25,
-                    line_width_max = 1)
+plot_network_radial(
+  fluxes,
+  x = TL,
+  y = TL,
+  labels = colnames(metaweb),
+  rotations = 1.5,
+  scale = 1.25,
+  line_width_max = 1
+)
 ```
 
 ```

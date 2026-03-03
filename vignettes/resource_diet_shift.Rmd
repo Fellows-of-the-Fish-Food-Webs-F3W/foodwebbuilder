@@ -16,4 +16,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(foodwebbuilder)
+
+data(resource_diet_shift)
+head(resource_diet_shift)
 ```

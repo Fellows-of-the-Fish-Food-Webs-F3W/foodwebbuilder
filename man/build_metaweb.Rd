@@ -103,7 +103,9 @@ metaweb <- build_metaweb(
   resource_diet_shift   = resource_diet_shift,
   num_classes           = 5, # optional consistency check
                              # (must match tab_size_classes)
-  selected_resources    = c("zoopl", "phytopl")
+  selected_resources    = c("zoopl", "phytopl"),
+  method_pw             = "mp",
+  method_ff             = "mp"
 )
 
 dim(metaweb)

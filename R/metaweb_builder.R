@@ -203,11 +203,11 @@ compute_size_classes <- function(ind_measure, num_classes) {
 #' @param selected_resources Character vector giving the names of resource
 #'   types (columns) to include in the metaweb.
 #' @param method_pw String indicating which method to use for building predation
-#'   windows. There are two options: `mp`, which uses the midpoint of size classes, 
-#'   or `bounds`, which uses the lower and upper bounds. 
-#' @param method_ff String indicating which method to use for building fish-fish 
-#'   interactions. There are two options: `mp`, which uses the midpoint of size classes, 
-#'   or `bounds`, which uses the lower and upper bounds. 
+#'   windows. There are two options: `mp`, which uses the midpoint of size classes,
+#'   or `bounds`, which uses the lower and upper bounds.
+#' @param method_ff String indicating which method to use for building fish-fish
+#'   interactions. There are two options: `mp`, which uses the midpoint of size classes,
+#'   or `bounds`, which uses the lower and upper bounds.
 #'
 #' @return
 #' A square adjacency matrix (data frame or matrix) representing all potential
@@ -256,7 +256,9 @@ compute_size_classes <- function(ind_measure, num_classes) {
 #'   resource_diet_shift   = resource_diet_shift,
 #'   num_classes           = 5, # optional consistency check
 #'                              # (must match tab_size_classes)
-#'   selected_resources    = c("zoopl", "phytopl")
+#'   selected_resources    = c("zoopl", "phytopl"),
+#'   method_pw             = "mp",
+#'   method_ff             = "mp"
 #' )
 #'
 #' dim(metaweb)
@@ -408,24 +410,24 @@ build_metaweb <- function(tab_size_classes,
       )
     }
   }
-  
+
   ## Compute prey size ranges
   lb_prey <- as.numeric(t(lb_prey_mat))
   ub_prey <- as.numeric(t(ub_prey_mat))
-  
+
   ## ---- Potential fish-fish interactions (size window overlap) ----
   # Matrix prey x predator
   if (method_ff == "mp"){
     ff <- (
       outer(mp_size_classes, lb_prey, `>=`) &
         outer(mp_size_classes, ub_prey, `<`)
-    )    
+    )
   } else {
     if (method_ff == "bounds"){
       ff <- (
         outer(ub_size_classes, lb_prey, `>=`) &
           outer(lb_size_classes, ub_prey, `<`)
-      )    
+      )
     } else
     {
       stop(
@@ -504,7 +506,7 @@ build_metaweb <- function(tab_size_classes,
     missing_res <- selected_resources[is.na(row_idx)]
     stop(
       "The following selected_resources are not found ",
-      "in resource_diet_shift$species_code: ", ,
+      "in resource_diet_shift$species_code: ",
       paste(missing_res, collapse = ", "),
       call. = FALSE
     )

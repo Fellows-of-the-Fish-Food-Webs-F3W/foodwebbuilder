@@ -25,7 +25,7 @@
 #'   Point T, Baglinière E, Porcher JP. (2022).
 #'   *A long-term monitoring database on fish and crayfish species
 #'   in French rivers*.
-#'   Knowledge \& Management of Aquatic Ecosystems, 423:25.
+#'   Knowledge \verb{&} Management of Aquatic Ecosystems, 423:25.
 #'   \doi{10.1051/kmae/2022021}.
 #'
 #' @examples

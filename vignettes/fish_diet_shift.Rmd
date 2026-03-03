@@ -16,4 +16,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(foodwebbuilder)
+
+data(fish_diet_shift)
+head(fish_diet_shift)
 ```

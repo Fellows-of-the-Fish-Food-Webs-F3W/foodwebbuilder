@@ -76,32 +76,64 @@ metaweb <- build_metaweb(
   pred_win            = pred_win,
   fish_diet_shift     = fish_diet_shift,
   resource_diet_shift = resource_diet_shift,
-  selected_resources  = selected_resources
+  selected_resources  = selected_resources,
+  method_pw             = "mp",
+  method_ff             = "mp"
 )
 ```
 
 ## Step 5: Visualisations
 
-```{r, fig.align='center', out.width='100%'}
-## Visualise metaweb
-image(
-  t(as.matrix(metaweb)),
-  ylim = c(1, 0),
-  col = colorRampPalette(c("blue", "white", "red"))(100),
-  main = "Global Metaweb",
-  axes = FALSE
+```{r, fig.align='center', fig.width=14, fig.height=10, out.width='100%'}
+## Visualise metaweb (rows = prey/resources, cols = consumers/predators)
+mat <- as.matrix(metaweb)
+
+pal <- grDevices::colorRampPalette(c("blue", "white", "red"))(100)
+cex_x <- 0.55
+cex_y <- 0.65
+tick_len <- 0.015
+
+old_par <- par(no.readonly = TRUE)
+on.exit(par(old_par), add = TRUE)
+
+par(mar = c(2, 10, 10, 2), xpd = NA)
+
+# Flip rows so the first row appears at the top
+z <- mat[nrow(mat):1, , drop = FALSE]
+
+graphics::image(
+  x = seq_len(ncol(mat)),
+  y = seq_len(nrow(mat)),
+  z = t(z),
+  col = pal,
+  axes = FALSE,
+  xlab = "",
+  ylab = ""
 )
 
-## Add custom axes with labels
-axis(1,
-     at = seq(0, 1, length.out = ncol(metaweb)),
-     labels = colnames(metaweb),
-     las = 2, cex.axis = 0.8)  # bottom (columns)
-axis(2,
-     at = seq(1, 0, length.out = nrow(metaweb)),
-     labels = rev(rownames(metaweb)),
-     las = 2, cex.axis = 0.8)  # left (rows, reversed to match orientation)
+graphics::box()
 
-## End
-box()
+# Ticks only (no automatic labels)
+graphics::axis(3, at = seq_len(ncol(mat)), labels = FALSE, tck = -tick_len)
+graphics::axis(2, at = seq_len(nrow(mat)), labels = FALSE, tck = -tick_len)
+
+# Manual labels (all)
+graphics::text(
+  x = seq_len(ncol(mat)),
+  y = nrow(mat) + 0.8,
+  labels = colnames(mat),
+  srt = 90, adj = 0, cex = cex_x
+)
+
+graphics::text(
+  x = -0.3,
+  y = seq_len(nrow(mat)),
+  labels = rev(rownames(mat)),
+  adj = 1, cex = cex_y
+)
+
+# Titles, stacked above the axis labels
+graphics::mtext("Global Metaweb", side = 3, line = 7.5, font = 2, cex = 1.2)
+graphics::mtext("Consumers / Predators (columns)", side = 3, line = 3.5, font = 2)
+graphics::mtext("Prey / Resources (rows)", side = 2, line = 4.5, font = 2)
 ```

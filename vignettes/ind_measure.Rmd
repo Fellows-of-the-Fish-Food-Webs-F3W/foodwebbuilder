@@ -16,4 +16,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(foodwebbuilder)
+
+data(ind_measure)
+head(ind_measure)
 ```
