@@ -78,8 +78,9 @@ metaweb <- build_metaweb(
   resource_diet_shift = resource_diet_shift,
   num_classes         = 5,
   selected_resources  = selected_resources,
-  method_pw             = "mp",
-  method_ff             = "mp"
+  method_resource_fish    = "midpoint",
+  method_predation_window = "midpoint",
+  method_fish_fish        = "midpoint"
 )
 ```
 

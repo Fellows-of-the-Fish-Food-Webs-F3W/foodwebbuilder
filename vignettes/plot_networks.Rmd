@@ -66,8 +66,10 @@ metaweb <- build_metaweb(tab_size_classes,
                          resource_diet_shift,
                          NUM_CLASSES,
                          SELECTED_RESOURCES,
-                         method_pw = "mp",
-                         method_ff = "mp")
+                         method_resource_fish    = "midpoint",
+                         method_predation_window = "midpoint",
+                         method_fish_fish        = "midpoint"
+                         )
 ```
 
 # Visualise the metaweb matrix

@@ -72,13 +72,14 @@ selected_resources <- c("det", "biof", "phytob", "macroph",
 
 ## Build metaweb
 metaweb <- build_metaweb(
-  tab_size_classes    = size_classes,
-  pred_win            = pred_win,
-  fish_diet_shift     = fish_diet_shift,
-  resource_diet_shift = resource_diet_shift,
-  selected_resources  = selected_resources,
-  method_pw             = "mp",
-  method_ff             = "mp"
+  tab_size_classes        = size_classes,
+  pred_win                = pred_win,
+  fish_diet_shift         = fish_diet_shift,
+  resource_diet_shift     = resource_diet_shift,
+  selected_resources      = selected_resources,
+  method_resource_fish    = "midpoint",
+  method_predation_window = "midpoint",
+  method_fish_fish        = "midpoint"
 )
 ```
 

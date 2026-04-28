@@ -1,0 +1,162 @@
+---
+title: "compute_metrics"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{compute_metrics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+## Figure options
+knitr::opts_chunk$set(
+  fig.width = 8,
+  fig.height = 6,
+  fig.align = "center",
+  dpi = 150
+)
+
+## Load libraries
+library(foodwebbuilder)
+```
+
+```{r}
+###############
+## LOAD DATA ##
+###############
+
+## Individual body length measurements
+data(ind_measure)
+head(ind_measure)
+nrow(ind_measure)
+
+## Fish ontogenetic diet shifts
+data(fish_diet_shift)
+head(fish_diet_shift)
+nrow(fish_diet_shift)
+
+## Resource ontogenetic diet shifts
+data(resource_diet_shift)
+head(resource_diet_shift)
+nrow(resource_diet_shift)
+
+## Fish predation windows
+data(pred_win)
+head(pred_win)
+nrow(pred_win)
+
+#
+###
+```
+
+```{r}
+####################
+## BUILD METAWEBS ##
+####################
+
+## Goal: Build multiple metawebs with increasing number of size classes.
+metawebs = list()
+for (i in 1:16){
+  #
+  ## Iterator
+  print(i)
+  
+  ## Global variables
+  NUM_CLASSES = i
+  SELECTED_RESOURCES = c("det", "biof", "phytob", "macroph", "phytopl", "zoopl", "zoob")
+  
+  ## Remove missing species
+  ind_measure = remove_missing_species(ind_measure, fish_diet_shift, pred_win)
+  
+  ## Compute size classes
+  tab_size_classes = compute_size_classes(ind_measure, NUM_CLASSES)
+  
+  ## Build metaweb
+  metaweb = build_metaweb(tab_size_classes, pred_win, fish_diet_shift, resource_diet_shift, NUM_CLASSES, SELECTED_RESOURCES, method_resource_fish="bounds", method_predation_window="bounds", method_fish_fish="bounds")
+
+  ## Collect
+  metawebs[[i]] = metaweb
+  #
+}
+
+#
+###
+```
+
+```{r}
+#####################
+## COMPUTE METRICS ##
+#####################
+
+## Goal: Compute network metrics for all metawebs.
+
+metawebs_metrics = list()
+for (i in 1:length(metawebs)){
+  #
+  ##
+  print(i)
+  metaweb = metawebs[[i]]
+  
+  ## Compute pulse of biomass through food web
+  fluxes = compute_bottom_up_fluxes(metaweb)
+  # barplot(fluxes, xlab="Biomass Flux", horiz=T, las=1)
+  
+  ## Find basal and leaf nodes (top predators)
+  print(get_basal_nodes(metaweb))
+  print(get_leaf_nodes(metaweb))
+  
+  ## Compute basic metrics
+  S = compute_S(metaweb)
+  L = compute_L(metaweb)
+  linkage_density = compute_linkage_density(metaweb)
+  C = compute_connectance(metaweb)
+    
+  ## Compute fraction of basal, intermediate, and top nodes
+  frac_basal = length(get_basal_nodes(metaweb))/S
+  frac_leaf = length(get_leaf_nodes(metaweb))/S
+  frac_intermediate = 1 - (frac_basal + frac_leaf)
+  
+  ## Compute trophic level and trophic breadth
+  TL = compute_trophic_level(metaweb)
+  TB = compute_trophic_breadth(metaweb, TL)
+  
+  ## Compute inward and outward degree
+  degree_in = compute_inward_degree(metaweb)
+  degree_out = compute_outward_degree(metaweb)
+  
+  ## Compute degree of omnivory
+  OI = compute_trophic_breadth(metaweb, TL)
+  
+  ## Collect
+  metawebs_metrics[[i]] = c(S, L, linkage_density, C,
+                            mean(TL), max(TL), 
+                            mean(TB), max(TB), 
+                            mean(OI), 
+                            frac_basal, frac_intermediate, frac_leaf
+                           )
+  
+}
+
+#
+###
+```
+
+```{r}
+####################
+## VISUALISATIONS ##
+####################
+
+## Convert to matrix
+mat = matrix(unlist(metawebs_metrics), ncol=length(metawebs_metrics[[1]]), byrow=T)
+COL_NAMES = c("S", "L", "L/S", "C", "meanTL", "maxTL", "meanTB", "maxTB", "meanOI", "fracBase", "fracInt", "fracTop")
+
+## Visualise
+par(mfrow=c(3,2), bty="l")
+#
+for (i in 1:12) plot(1:nrow(mat), mat[,i], type="b", pch=16, xlab="Number of Classes", ylab=COL_NAMES[i])
+#
+par(mfrow=c(1,1))
+
+#
+###
+```

@@ -2,8 +2,13 @@
 
 export(build_local_foodweb)
 export(build_metaweb)
+export(compute_L)
+export(compute_S)
 export(compute_bottom_up_fluxes)
+export(compute_connectance)
 export(compute_inward_degree)
+export(compute_linkage_density)
+export(compute_metrics_summary)
 export(compute_outward_degree)
 export(compute_size_classes)
 export(compute_trophic_breadth)
