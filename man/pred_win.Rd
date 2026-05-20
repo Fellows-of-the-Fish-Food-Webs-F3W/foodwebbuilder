@@ -8,9 +8,11 @@
 A data frame with 61 rows and 9 columns:
 \describe{
 \item{species_code}{Three-letter species code.}
-\item{alpha_min}{Lower slope coefficient defining the minimum predation window.}
+\item{alpha_min}{Lower slope coefficient defining
+the minimum predation window.}
 \item{beta_min}{Intercept defining the minimum predation window.}
-\item{alpha_max}{Upper slope coefficient defining the maximum predation window.}
+\item{alpha_max}{Upper slope coefficient defining
+the maximum predation window.}
 \item{beta_max}{Intercept defining the maximum predation window.}
 \item{alpha_mean}{Slope coefficient for the mean predation window.}
 \item{beta_mean}{Intercept for the mean predation window.}

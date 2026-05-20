@@ -9,9 +9,14 @@ A data frame with 9 rows and 14 columns:
 \describe{
 \item{species_code}{Resource code.}
 \item{taxon_name}{Resource taxon name.}
-\item{size_min}{Minimum body size of the size class (set to 0 due to lack of data; resource taxa are assumed to occur at all sampling sites).}
-\item{size_max}{Maximum body size of the size class (set to 0 due to lack of data; resource taxa are assumed to occur at all sampling sites).}
-\item{stage}{Dietary stage of the size class (set to 0 for all resource taxa).}
+\item{size_min}{Minimum body size of the size class
+(set to 0 due to lack of data;
+resource taxa are assumed to occur at all sampling sites).}
+\item{size_max}{Maximum body size of the size class
+(set to 0 due to lack of data;
+resource taxa are assumed to occur at all sampling sites).}
+\item{stage}{Dietary stage of the size class
+(set to 0 for all resource taxa).}
 \item{light}{Light-based food source.}
 \item{det}{Detritus food source.}
 \item{biof}{Biofilm food source.}

@@ -202,6 +202,15 @@ compute_size_classes <- function(ind_measure, num_classes) {
 #'   If inconsistent, the function errors.
 #' @param selected_resources Character vector giving the names of resource
 #'   types (columns) to include in the metaweb.
+#' @param method_resource_fish String indicating which method to use for building resource-fish
+#'   interactions There are two options: `midpoint`, which uses the midpoint of size classes,
+#'   or `bounds`, which uses the lower and upper bounds.
+#' @param method_predation_window String indicating which method to use for building predation
+#'   windows. There are two options: `midpoint`, which uses the midpoint of size classes,
+#'   or `bounds`, which uses the lower and upper bounds.
+#' @param method_fish_fish String indicating which method to use for building fish-fish
+#'   interactions. There are two options: `midpoint`, which uses the midpoint of size classes,
+#'   or `bounds`, which uses the lower and upper bounds. By default, the midpoint method is used.
 #'
 #' @return
 #' A square adjacency matrix (data frame or matrix) representing all potential
@@ -250,7 +259,10 @@ compute_size_classes <- function(ind_measure, num_classes) {
 #'   resource_diet_shift   = resource_diet_shift,
 #'   num_classes           = 5, # optional consistency check
 #'                              # (must match tab_size_classes)
-#'   selected_resources    = c("zoopl", "phytopl")
+#'   selected_resources    = c("zoopl", "phytopl"),
+#'   method_resource_fish  = "midpoint",
+#'   method_predation_window = "midpoint",
+#'   method_fish_fish        = "midpoint"
 #' )
 #'
 #' dim(metaweb)
@@ -265,8 +277,11 @@ build_metaweb <- function(tab_size_classes,
                           fish_diet_shift,
                           resource_diet_shift,
                           num_classes = NULL,
-                          selected_resources) {
-
+                          selected_resources,
+                          method_resource_fish = "midpoint",
+                          method_predation_window="midpoint",
+                          method_fish_fish="midpoint") {
+  
   ## ---- Basic validation ----
   .assert_has_cols(tab_size_classes, c("species_code", "lower_bound"),
                    "tab_size_classes")
@@ -377,21 +392,55 @@ build_metaweb <- function(tab_size_classes,
   }
   pred_win_ <- pred_win[s, , drop = FALSE]
 
-  # reshape class midpoints as matrix (species x classes)
-  mp_mat <- matrix(mp_size_classes, ncol = num_classes, byrow = TRUE)
+  if (method_predation_window == "midpoint"){
+    # reshape class midpoints as matrix (species x classes)
+    mp_mat <- matrix(mp_size_classes, ncol = num_classes, byrow = TRUE)
+    lb_prey_mat <- mp_mat * pred_win_$beta_min
+    ub_prey_mat <- mp_mat * pred_win_$beta_max
+  } else {
+    if (method_predation_window == "bounds")
+    {
+      # reshape class bounds as matrix (species x classes)
+      lb_mat <- matrix(lb_size_classes, ncol = num_classes, byrow = TRUE)
+      ub_mat <- matrix(ub_size_classes, ncol = num_classes, byrow = TRUE)
+      lb_prey_mat <- lb_mat * pred_win_$beta_min
+      ub_prey_mat <- ub_mat * pred_win_$beta_max
+    } else {
+      stop(
+        "The following predation window method is not recognised (method_predation_window): ",
+        paste(method_predation_window, ".\n"),
+        "Choose either midpoint or bounds.",
+        call. = FALSE
+      )
+    }
+  }
 
-  lb_prey_mat <- mp_mat * pred_win_$beta_min
-  ub_prey_mat <- mp_mat * pred_win_$beta_max
-
+  ## Compute prey size ranges
   lb_prey <- as.numeric(t(lb_prey_mat))
   ub_prey <- as.numeric(t(ub_prey_mat))
 
   ## ---- Potential fish-fish interactions (size window overlap) ----
   # Matrix prey x predator
-  ff <- (
-    outer(mp_size_classes, lb_prey, `>=`) &
-      outer(mp_size_classes, ub_prey, `<`)
-  )
+  if (method_fish_fish == "midpoint"){
+    ff <- (
+      outer(mp_size_classes, lb_prey, `>=`) &
+        outer(mp_size_classes, ub_prey, `<`)
+    )
+  } else {
+    if (method_fish_fish == "bounds"){
+      ff <- (
+        outer(ub_size_classes, lb_prey, `>=`) &
+          outer(lb_size_classes, ub_prey, `<`)
+      )
+    } else {
+      stop(
+        "The following fish-fish interaction method is not recognised (method_fish_fish): ",
+        paste(method_fish_fish, ".\n"),
+        "Choose either midpoint or bounds.",
+        call. = FALSE
+      )
+    }
+  }
   ff <- .as_01_numeric(ff, "ff_interactions")
 
   dimnames(ff) <- list(prey = trophic_species_code,
@@ -399,10 +448,10 @@ build_metaweb <- function(tab_size_classes,
 
   ## ---- Piscivory status per trophic species (predator filter) ----
   diet_by_sp <- split(fish_diet_shift, fish_diet_shift$species_code)
-
-  get_row_for_size <- function(df, size_val, sp, ts_code) {
-    # choose row where size_min <= size < size_max
-    idx <- which(size_val >= df$size_min & size_val < df$size_max)
+ 
+  get_row_for_size_midpoint <- function(df, size_val, sp, ts_code) {
+    # choose row where size_min <= size <= size_max (using greater or equal for both poses no problem as the upper bound of a size class is always lower than the lower bound of the adjacent larger size class)
+    idx <- which(size_val >= df$size_min & size_val <= df$size_max)
     if (length(idx) == 0) {
       stop(
         "No matching diet interval found for trophic species ", ts_code,
@@ -412,6 +461,30 @@ build_metaweb <- function(tab_size_classes,
       )
     }
     df[idx[1], , drop = FALSE]
+  }
+
+  get_row_for_size_bounds <- function(df, size_val_lb, size_val_hb, sp, ts_code) {
+    # choose row where size_min <= size <= size_max (using greater or equal for both poses no problem as the upper bound of a size class is always lower than the lower bound of the adjacent larger size class)
+    idx <- which(size_val_lb <= df$size_max & size_val_hb >= df$size_min)
+    if (length(idx) == 0) {
+      stop(
+        "No matching diet interval found for trophic species ", ts_code,
+        " (species_code=", sp, ", size midpoint=", signif(size_val, 6), "). ",
+        "Check fish_diet_shift size_min/size_max coverage.",
+        call. = FALSE
+      )
+    }
+    row_i_ = df[idx, , drop = FALSE] # Can be multiple matches
+    if (length(which(colnames(row_i_) == "species_code")) == 0 | length(which(colnames(row_i_) == "species_name")) == 0){
+      stop(
+        "No matching columns named species_code or species_name found in diet table. Unable to safely collapse diet across multiple size classes."
+      )
+    }
+    s = which(colnames(row_i_) == "species_code" | colnames(row_i_) == "species_name")
+    row_i_rhs = apply(row_i_[,-s], 2, sum) # Collapse into a single row
+    row_i_rhs = (row_i_rhs > 0)*1 # Binarise
+    row_i_ = data.frame(c(row_i_[1,c("species_code", "species_name")], row_i_rhs))
+    return(row_i_)
   }
 
   piscivory <- numeric(length(trophic_species_code))
@@ -433,11 +506,29 @@ build_metaweb <- function(tab_size_classes,
       )
     }
 
-    row_i <- get_row_for_size(df,
-                              mp_size_classes[i],
-                              sp,
-                              trophic_species_code[i])
-
+    ## DEV: Add option to switch between midpoint and bounds.
+    if (method_resource_fish == "midpoint"){
+        row_i <- get_row_for_size_midpoint(df,
+                                           mp_size_classes[i],
+                                           sp,
+                                           trophic_species_code[i])
+    } else {
+        if (method_resource_fish == "bounds"){
+            row_i <- get_row_for_size_bounds(df,
+                                             lb_size_classes[i],
+                                             ub_size_classes[i],
+                                             sp,
+                                             trophic_species_code[i])
+        } else {
+          stop(
+            "The following resource-fish interaction method is not recognised (method_resource_fish): ",
+            paste(method_resource_fish, ".\n"),
+            "Choose either midpoint or bounds.",
+            call. = FALSE
+          )
+        }
+    }
+         
     piscivory[i] <- .as_01_numeric(row_i[["fish"]], "fish_diet_shift$fish")
 
     # resource-fish diet proportions / flags for selected resources
@@ -460,14 +551,14 @@ build_metaweb <- function(tab_size_classes,
     missing_res <- selected_resources[is.na(row_idx)]
     stop(
       "The following selected_resources are not found ",
-      "in resource_diet_shift$species_code: ", ,
+      "in resource_diet_shift$species_code: ",
       paste(missing_res, collapse = ", "),
       call. = FALSE
     )
   }
 
   rr <- resource_diet_shift[row_idx, selected_resources, drop = FALSE]
-  rr <- as.matrix(rr)
+  rr <- t(as.matrix(rr))
   storage.mode(rr) <- "numeric"
   dimnames(rr) <- list(selected_resources, selected_resources)
 

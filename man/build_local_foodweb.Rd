@@ -56,8 +56,9 @@ For each local unit, the function:
 }
 
 The number of size classes is inferred from \code{tab_size_classes}.
-Users wishing to change the number of size classes should regenerate
-\code{tab_size_classes} with \code{\link[=compute_size_classes]{compute_size_classes()}} and re-run \code{\link[=build_metaweb]{build_metaweb()}}.
+Users wishing to change the number of size classes should
+regenerate \code{tab_size_classes} with \code{\link[=compute_size_classes]{compute_size_classes()}}
+and re-run \code{\link[=build_metaweb]{build_metaweb()}}.
 }
 \examples{
 \dontrun{

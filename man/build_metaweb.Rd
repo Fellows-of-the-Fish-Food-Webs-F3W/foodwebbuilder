@@ -10,7 +10,10 @@ build_metaweb(
   fish_diet_shift,
   resource_diet_shift,
   num_classes = NULL,
-  selected_resources
+  selected_resources,
+  method_resource_fish = "midpoint",
+  method_predation_window = "midpoint",
+  method_fish_fish = "midpoint"
 )
 }
 \arguments{
@@ -32,11 +35,25 @@ interactions (e.g., basal resource dependencies). Must include one row per
 resource and columns corresponding to the resources listed in
 \code{selected_resources}.}
 
-\item{num_classes}{Optional integer. If provided, it is used ONLY as a consistency check
-against \code{tab_size_classes} (source of truth). If inconsistent, the function errors.}
+\item{num_classes}{Optional integer.
+If provided, it is used ONLY as a consistency check
+against \code{tab_size_classes} (source of truth).
+If inconsistent, the function errors.}
 
 \item{selected_resources}{Character vector giving the names of resource
 types (columns) to include in the metaweb.}
+
+\item{method_resource_fish}{String indicating which method to use for building resource-fish
+interactions There are two options: \code{midpoint}, which uses the midpoint of size classes,
+or \code{bounds}, which uses the lower and upper bounds.}
+
+\item{method_predation_window}{String indicating which method to use for building predation
+windows. There are two options: \code{midpoint}, which uses the midpoint of size classes,
+or \code{bounds}, which uses the lower and upper bounds.}
+
+\item{method_fish_fish}{String indicating which method to use for building fish-fish
+interactions. There are two options: \code{midpoint}, which uses the midpoint of size classes,
+or \code{bounds}, which uses the lower and upper bounds. By default, the midpoint method is used.}
 }
 \value{
 A square adjacency matrix (data frame or matrix) representing all potential
@@ -91,7 +108,10 @@ metaweb <- build_metaweb(
   resource_diet_shift   = resource_diet_shift,
   num_classes           = 5, # optional consistency check
                              # (must match tab_size_classes)
-  selected_resources    = c("zoopl", "phytopl")
+  selected_resources    = c("zoopl", "phytopl"),
+  method_resource_fish  = "midpoint",
+  method_predation_window = "midpoint",
+  method_fish_fish        = "midpoint"
 )
 
 dim(metaweb)

@@ -105,7 +105,9 @@ metaweb <- build_metaweb(
   pred_win            = pred_win,
   fish_diet_shift     = fish_diet_shift,
   resource_diet_shift = resource_diet_shift,
-  selected_resources  = c("zoopl", "phytopl")
+  selected_resources  = c("zoopl", "phytopl"),
+  method_pw             = "mp",
+  method_ff             = "mp"
 )
 
 ## The metaweb is a square matrix: rows = prey, columns = consumers
