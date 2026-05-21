@@ -589,3 +589,139 @@ build_metaweb <- function(tab_size_classes,
 
   metaweb
 }
+
+########################################
+## FLATTEN FOOD WEB INTO OUTPUT TABLE ##
+########################################
+
+#' Flatten a food web adjacency matrix into long format
+#'
+#' @description
+#' Converts a food web adjacency matrix into a long-format data frame with one
+#' row per prey–consumer pair.
+#'
+#' The matrix is flattened by rows, so the output ordering is consistent with
+#' `as.vector(t(foodweb_mat))`.
+#'
+#' @param foodweb_mat A food web adjacency matrix. Row names must correspond to
+#'   prey and column names must correspond to consumers.
+#'
+#' @return
+#' A data frame with three columns:
+#' \describe{
+#'   \item{prey}{Prey node name}
+#'   \item{consumer}{Consumer node name}
+#'   \item{interaction}{Adjacency value for the prey–consumer pair}
+#' }
+#'
+#' @details
+#' The function preserves the full prey–consumer structure of the adjacency
+#' matrix in a tabular format that is convenient for filtering, joining, and
+#' downstream analyses.
+#'
+#' @examples
+#' \dontrun{
+#' ## Fake foodweb matrix
+#' foodweb_mat <- matrix(rnorm(9), 3, 3)
+#' colnames(foodweb_mat) <- c("A", "B", "C")
+#' rownames(foodweb_mat) <- c("a", "b", "c")
+#' 
+#' ## Visualise
+#' print(foodweb_mat)
+#' 
+#' ## Function to flatten food web matrix
+#' foodweb_tab <- flatten_foodweb(foodweb_mat)
+#' 
+#' ## Visualise
+#' print(foodweb_tab)
+#' }
+#'
+#' @seealso [unflatten_foodweb()]
+#'
+#' @export
+flatten_foodweb <- function(foodweb_mat) {
+  
+  ## Check row and column names
+  if (is.null(rownames(foodweb_mat)) || is.null(colnames(foodweb_mat))) {
+    stop("metaweb must have both rownames and colnames.")
+  }
+  
+  ## Interactions
+  values <- as.vector(t(foodweb_mat))
+  
+  ## Format prey and consumer names
+  prey_ids <- rep(rownames(foodweb_mat), each=length(rownames(foodweb_mat)))
+  consumer_ids <- rep(colnames(foodweb_mat), length(colnames(foodweb_mat)))
+  
+  ## Format table
+  foodweb_tab <- data.frame(prey=prey_ids, consumer=consumer_ids, interaction=values)
+  
+  ## Return
+  return(foodweb_tab)
+  
+}
+
+#' Reconstruct a food web adjacency matrix from long format
+#'
+#' @description
+#' Converts a flattened food web data frame back into an adjacency matrix.
+#'
+#' @param foodweb_tab A data frame in long format with at least three columns:
+#'   `prey`, `consumer`, and `interaction`.
+#'
+#' @return
+#' A matrix with prey as row names, consumers as column names, and
+#' `interaction` values as the matrix entries.
+#'
+#' @details
+#' This function assumes that each prey–consumer pair appears at most once in
+#' `foodweb_tab`.
+#'
+#' @examples
+#' \dontrun{
+#' ## Fake foodweb table
+#' prey <- rep(c("a","b","c"), each=3)
+#' consumers <- rep(c("A","B","C"))
+#' interactions <- rnorm(9)
+#' foodweb_tab <- data.frame(prey=prey, consumer=consumers, interaction=interactions)
+#' 
+#' ## Visualise
+#' print(foodweb_tab)
+#' 
+#' ## Unflatten table
+#' foodweb_mat <- unflatten_foodweb(foodweb_tab)
+#' 
+#' ## Visualise
+#' print(foodweb_mat)
+#' }
+#'
+#' @seealso [flatten_foodweb()]
+#'
+#' @export
+unflatten_foodweb <- function(foodweb_tab) {
+
+  ## Check columns  
+  if (!all(c("prey", "consumer", "interaction") %in% names(foodweb_tab))) {
+    stop(
+      "flattened_fw must contain columns: prey, consumer, interaction.",
+      call. = FALSE
+    )
+  }
+  
+  ## Get species code
+  prey <- unique(foodweb_tab$prey)
+  consumer <- unique(foodweb_tab$consumer)
+  
+  ## Re-assemble interaction matrix
+  foodweb_mat <- matrix(
+    foodweb_tab$interaction,
+    nrow = length(prey),
+    byrow = TRUE,
+    dimnames = list(prey, consumer)
+  )
+
+  ## Return
+  return(foodweb_mat)
+  
+}
+
