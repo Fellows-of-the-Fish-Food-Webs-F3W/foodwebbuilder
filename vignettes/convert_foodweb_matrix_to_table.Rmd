@@ -200,7 +200,7 @@ image(t(as.matrix(local_fw)), ylim=c(1,0), col = colorRampPalette(c("blue", "whi
 ###
 ```
 
-# Flatten local food webs
+# Flatten a single local food web
 
 ```{r}
 #############################################
@@ -215,6 +215,24 @@ local_fw_mat_rebuilt <- unflatten_foodweb(local_fw_tab)
 
 ## Check
 print(prod(local_fw_mat_rebuilt == local_fw))
+
+#
+###
+```
+
+# Flatten all local food webs
+
+```{r}
+#############################################
+## TEST FUNCTION TO FLATTEN LOCAL FOOD WEB ##
+#############################################
+
+## Use function to flatten local foodweb list
+local_fws_tab <- flatten_foodweb_list(local_fws)
+
+## Visualise
+head(local_fws_tab)
+tail(local_fws_tab)
 
 #
 ###

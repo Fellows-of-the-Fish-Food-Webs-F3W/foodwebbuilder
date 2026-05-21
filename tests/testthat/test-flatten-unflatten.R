@@ -147,3 +147,106 @@ test_that("unflatten_foodweb errors when required columns are missing", {
     unflatten_foodweb(bad_df)
   )
 })
+
+test_that("flatten_foodweb_list returns a data frame", {
+  
+  fw1 <- matrix(
+    1:4,
+    nrow = 2,
+    dimnames = list(
+      c("a", "b"),
+      c("A", "B")
+    )
+  )
+  
+  fw2 <- matrix(
+    5:8,
+    nrow = 2,
+    dimnames = list(
+      c("a", "b"),
+      c("A", "B")
+    )
+  )
+  
+  fw_list <- list(
+    site1 = fw1,
+    site2 = fw2
+  )
+  
+  out <- flatten_foodweb_list(fw_list)
+  
+  expect_s3_class(out, "data.frame")
+})
+
+test_that("flatten_foodweb_list returns expected columns", {
+  
+  fw <- matrix(
+    1:4,
+    nrow = 2,
+    dimnames = list(
+      c("a", "b"),
+      c("A", "B")
+    )
+  )
+  
+  out <- flatten_foodweb_list(list(site1 = fw))
+  
+  expect_equal(
+    names(out),
+    c("prey", "consumer", "interaction", "operation_id")
+  )
+})
+
+test_that("flatten_foodweb_list preserves interactions", {
+  
+  fw <- matrix(
+    c(1, 2,
+      3, 4),
+    nrow = 2,
+    byrow = TRUE,
+    dimnames = list(
+      c("a", "b"),
+      c("A", "B")
+    )
+  )
+  
+  out <- flatten_foodweb_list(list(site1 = fw))
+  
+  expect_equal(
+    out$interaction,
+    as.vector(t(fw))
+  )
+})
+
+test_that("flatten_foodweb_list preserves operation ids", {
+  
+  fw1 <- matrix(
+    1:4,
+    nrow = 2,
+    dimnames = list(
+      c("a", "b"),
+      c("A", "B")
+    )
+  )
+  
+  fw2 <- matrix(
+    5:8,
+    nrow = 2,
+    dimnames = list(
+      c("a", "b"),
+      c("A", "B")
+    )
+  )
+  
+  out <- flatten_foodweb_list(
+    list(
+      operation_1 = fw1,
+      operation_2 = fw2
+    )
+  )
+  
+  expect_equal(
+    unique(out$operation_id),
+    c("operation_1", "operation_2")
+  )
+})

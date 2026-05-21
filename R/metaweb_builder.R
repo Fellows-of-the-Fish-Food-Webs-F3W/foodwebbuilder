@@ -725,3 +725,86 @@ unflatten_foodweb <- function(foodweb_tab) {
   
 }
 
+#' Flatten a list of food web matrices into a single long-format table
+#'
+#' @description
+#' Converts a list of food web adjacency matrices into a single long-format
+#' data frame by applying [flatten_foodweb()] to each matrix and appending
+#' an identifier column indicating the local food web of origin.
+#'
+#' @param foodweb_mat_list A named list of food web adjacency matrices.
+#'   Each element must be a matrix with prey as rows and consumers as columns.
+#'   List names are used as local food web identifiers.
+#'
+#' @return
+#' A data frame with four columns:
+#' \describe{
+#'   \item{prey}{Prey node name}
+#'   \item{consumer}{Consumer node name}
+#'   \item{interaction}{Adjacency value for the prey–consumer pair}
+#'   \item{operation_id}{Identifier of the local food web}
+#' }
+#'
+#' @details
+#' This function is useful for combining multiple local food webs into a
+#' single tabular object for downstream analyses, export, or plotting.
+#'
+#' The function assumes that all elements of `foodweb_mat_list`
+#' are valid food web adjacency matrices compatible with
+#' [flatten_foodweb()].
+#'
+#' @examples
+#' \dontrun{
+#' ## Fake food web matrices
+#' fw1 <- matrix(rnorm(9), 3, 3)
+#' fw2 <- matrix(rnorm(9), 3, 3)
+#'
+#' colnames(fw1) <- colnames(fw2) <- c("A", "B", "C")
+#' rownames(fw1) <- rownames(fw2) <- c("a", "b", "c")
+#'
+#' ## Build named list
+#' foodweb_mat_list <- list(
+#'   operation_1 = fw1,
+#'   operation_2 = fw2
+#' )
+#'
+#' ## Flatten all food webs
+#' local_fws_tab <- flatten_foodweb_list(foodweb_mat_list)
+#'
+#' ## Visualise
+#' head(local_fws_tab)
+#' }
+#'
+#' @seealso [flatten_foodweb()], [unflatten_foodweb()]
+#'
+#' @export
+flatten_foodweb_list <- function(foodweb_mat_list){
+  
+  ## Initiate
+  local_fws_tab = data.frame()
+  
+  ## For each local food web
+  for (i in 1:length(foodweb_mat_list)){
+    
+    ## Get local food web
+    operation_id_i = names(foodweb_mat_list)[i]
+    local_fw_i = foodweb_mat_list[[i]]
+    
+    ## Flatten food web
+    local_fw_i_tab = flatten_foodweb(local_fw_i)
+    head(local_fw_i_tab)
+    
+    ## Add operation id
+    local_fw_i_tab$operation_id = operation_id_i
+    head(local_fw_i_tab)
+    
+    ## Collect
+    local_fws_tab = rbind(local_fws_tab, local_fw_i_tab)
+    
+  }
+  
+  ## End
+  return(local_fws_tab)
+  
+}
+
