@@ -792,11 +792,9 @@ flatten_foodweb_list <- function(foodweb_mat_list){
     
     ## Flatten food web
     local_fw_i_tab = flatten_foodweb(local_fw_i)
-    head(local_fw_i_tab)
     
     ## Add operation id
     local_fw_i_tab$operation_id = operation_id_i
-    head(local_fw_i_tab)
     
     ## Collect
     local_fws_tab = rbind(local_fws_tab, local_fw_i_tab)

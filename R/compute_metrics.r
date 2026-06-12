@@ -169,9 +169,10 @@ compute_bottom_up_fluxes = function(M, nIt=100){
 #'
 #' @param M A square adjacency or interaction matrix.
 #' @param nIt Maximum number of iterations.
+#' @param output_log Wether to print the number of iterations until convergence.
 #' @return A numeric vector of trophic levels.
 #' @export
-compute_trophic_level = function(M, nIt=100){
+compute_trophic_level = function(M, nIt=100, output_log=F){
   
   ## Initialise
   d = ncol(M)
@@ -192,7 +193,7 @@ compute_trophic_level = function(M, nIt=100){
     ## Check convergence
     loss = mean((TL_old - TL)^2)
     if (loss <= 0.001){
-      message(paste("Converged after", k, "iterations."))
+      if (output_log == T) message(paste("Converged after", k, "iterations."))
       break
     }
     
@@ -219,22 +220,22 @@ compute_trophic_level = function(M, nIt=100){
 compute_metrics_summary = function(M){
   
   ## Compute basic metrics
-  S = compute_S(metaweb)
-  L = compute_L(metaweb)
-  linkage_density = compute_linkage_density(metaweb)
-  C = compute_connectance(metaweb)
+  S = compute_S(M)
+  L = compute_L(M)
+  linkage_density = compute_linkage_density(M)
+  C = compute_connectance(M)
   
   ## Compute fraction of basal, intermediate, and top nodes
-  frac_basal = length(get_basal_nodes(metaweb))/S
-  frac_leaf = length(get_leaf_nodes(metaweb))/S
+  frac_basal = length(get_basal_nodes(M))/S
+  frac_leaf = length(get_leaf_nodes(M))/S
   frac_intermediate = 1 - (frac_basal + frac_leaf)
   
   ## Compute trophic level and trophic breadth
-  TL = compute_trophic_level(metaweb)
-  TB = compute_trophic_breadth(metaweb, TL)
+  TL = compute_trophic_level(M)
+  TB = compute_trophic_breadth(M, TL)
 
   ## Compute degree of omnivory
-  OI = compute_trophic_breadth(metaweb, TL)
+  OI = compute_trophic_breadth(M, TL)
   
   ## Collect
   metrics = c(S, L, linkage_density, C,
