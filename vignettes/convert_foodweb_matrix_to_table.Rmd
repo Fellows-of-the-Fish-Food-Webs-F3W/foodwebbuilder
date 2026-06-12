@@ -1,0 +1,239 @@
+---
+title: "Convert food web matrices to tables"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Building and validating food webs}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Load package and example data
+
+```{r}
+library(foodwebbuilder)
+
+data(ind_measure)
+head(ind_measure)
+nrow(ind_measure)
+
+data(fish_diet_shift)
+head(fish_diet_shift)
+nrow(fish_diet_shift)
+
+data(resource_diet_shift)
+head(resource_diet_shift)
+nrow(resource_diet_shift)
+
+data(pred_win)
+head(pred_win)
+nrow(pred_win)
+```
+
+# Example flatten
+
+```{r}
+#####################
+## EXAMPLE FLATTEN ##
+#####################
+
+## Goal: convert foodweb matrix into foodweb table
+
+## Fake foodweb matrix
+foodweb_mat <- matrix(rnorm(9), 3, 3)
+colnames(foodweb_mat) <- c("A", "B", "C")
+rownames(foodweb_mat) <- c("a", "b", "c")
+
+## Visualise
+print(foodweb_mat)
+
+## Function to flatten food web matrix
+foodweb_tab <- flatten_foodweb(foodweb_mat)
+
+## Visualise
+print(foodweb_tab)
+
+#
+###
+```
+
+# Example unflatten 
+
+```{r}
+#######################
+## EXAMPLE UNFLATTEN ##
+#######################
+
+## Goal: convert foodweb table into foodweb matrix
+
+## Fake foodweb table
+prey <- rep(c("a","b","c"), each=3)
+consumers <- rep(c("A","B","C"))
+interactions <- rnorm(9)
+foodweb_tab <- data.frame(prey=prey, consumer=consumers, interaction=interactions)
+
+## Visualise
+print(foodweb_tab)
+
+## Unflatten table
+foodweb_mat <- unflatten_foodweb(foodweb_tab)
+
+## Visualise
+print(foodweb_mat)
+
+#
+###
+
+```
+
+# Check reversibility
+
+```{r}
+##########################################
+## TEST REVERSIBILITY FLATTEN UNFLATTEN ##
+##########################################
+
+## Goal: convert foodweb matrix into foodweb table
+
+## Fake foodweb matrix
+foodweb_mat <- matrix(rnorm(9), 3, 3)
+colnames(foodweb_mat) <- c("A", "B", "C")
+rownames(foodweb_mat) <- c("a", "b", "c")
+
+## Visualise
+print(foodweb_mat)
+
+## Function to flatten and unflatten food web
+foodweb_tab <- flatten_foodweb(foodweb_mat)
+
+## Visualise
+print(foodweb_tab)
+
+## Unflatten
+foodweb_mat_rebuilt <- unflatten_foodweb(foodweb_tab)
+
+## Visualise
+print(foodweb_mat_rebuilt)
+
+## Check
+print(prod(foodweb_mat_rebuilt == foodweb_mat))
+
+#
+###
+```
+
+# Build the metaweb
+
+```{r}
+####################
+## BUILD METAWEBS ##
+####################
+
+## Global variables
+NUM_CLASSES = 9
+SELECTED_RESOURCES <- c("det", "biof", "phytob", "macroph", "phytopl", "zoopl", "zoob")
+
+## Remove missing species
+ind_measure <- remove_missing_species(ind_measure, fish_diet_shift, pred_win)
+
+## Compute size classes
+tab_size_classes <- compute_size_classes(ind_measure, NUM_CLASSES)
+
+## Build metaweb
+metaweb <- build_metaweb(tab_size_classes, pred_win, fish_diet_shift, resource_diet_shift, NUM_CLASSES, SELECTED_RESOURCES, method_resource_fish="bounds", method_predation_window="bounds", method_fish_fish="bounds")
+
+#
+###
+```
+
+# Flatten metaweb
+
+```{r}
+######################################
+## TEST FUNCTION TO FLATTEN METAWEB ##
+######################################
+
+## Function to flatten and unflatten food web
+metaweb_tab <- flatten_foodweb(metaweb)
+metaweb_mat_rebuilt <- unflatten_foodweb(metaweb_tab)
+
+## Check
+print(prod(metaweb_mat_rebuilt == metaweb))
+
+#
+###
+```
+
+# Build local food webs
+
+```{r}
+###########################
+## BUILD LOCAL FOOD WEBS ##
+###########################
+
+## Global variables
+NUM_CLASSES <- 9
+SELECTED_RESOURCES <- c("det", "biof", "phytob", "macroph", "phytopl", "zoopl", "zoob")
+ 
+## Build local foodwebs
+local_fws <- build_local_foodweb(ind_measure = ind_measure, 
+                               local_id = "operation_id", 
+                               metaweb = metaweb, 
+                               tab_size_classes = tab_size_classes, 
+                               selected_resources = SELECTED_RESOURCES)
+
+## TO DO: change build_local_foodweb to build_local_foodwebs
+
+## Pick one local foodweb
+local_fw <- local_fws[[2]]
+
+## Visualise food web
+image(t(as.matrix(local_fw)), ylim=c(1,0), col = colorRampPalette(c("blue", "white", "red"))(100))
+
+#
+###
+```
+
+# Flatten a single local food web
+
+```{r}
+#############################################
+## TEST FUNCTION TO FLATTEN LOCAL FOOD WEB ##
+#############################################
+
+## Convert to output file
+local_fw_tab <- flatten_foodweb(local_fw)
+
+## Flatten
+local_fw_mat_rebuilt <- unflatten_foodweb(local_fw_tab)
+
+## Check
+print(prod(local_fw_mat_rebuilt == local_fw))
+
+#
+###
+```
+
+# Flatten all local food webs
+
+```{r}
+#############################################
+## TEST FUNCTION TO FLATTEN LOCAL FOOD WEB ##
+#############################################
+
+## Use function to flatten local foodweb list
+local_fws_tab <- flatten_foodweb_list(local_fws)
+
+## Visualise
+head(local_fws_tab)
+tail(local_fws_tab)
+
+#
+###
+```
