@@ -1,57 +1,111 @@
 testthat::test_that(
   "remove_missing_species keeps all species when data is complete",
   {
-  ind_measure <- data.frame(
-    species_code = c("A", "B", "A"),
-    size = c(1, 2, 3)
-  )
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op1", "op2"),
+      batch_id = c("b1", "b2", "b3"),
+      species_code = c("A", "B", "A"),
+      size = c(1, 2, 3)
+    )
 
-  fish_diet_shift <- data.frame(
-    species_code = c("A", "B"),
-    size_min = c(0, 0),
-    size_max = c(10, 10),
-    fish = c(0, 0)
-  )
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B"),
+      size_min = c(0, 0),
+      size_max = c(10, 10),
+      fish = c(0, 0)
+    )
 
-  pred_win <- data.frame(
-    species_code = c("A", "B"),
-    beta_min = c(0.2, 0.2),
-    beta_max = c(1.0, 1.0)
-  )
+    pred_win <- data.frame(
+      species_code = c("A", "B"),
+      beta_min = c(0.2, 0.2),
+      beta_max = c(1.0, 1.0)
+    )
 
-  res <- remove_missing_species(ind_measure, fish_diet_shift, pred_win)
+    res <- remove_missing_species(
+      ind_measure,
+      fish_diet_shift,
+      pred_win
+    )
 
-  testthat::expect_equal(nrow(res), nrow(ind_measure))
-  testthat::expect_equal(sort(res$species_code), sort(ind_measure$species_code))
-})
+    testthat::expect_equal(
+      nrow(res),
+      nrow(ind_measure)
+    )
+
+    testthat::expect_equal(
+      sort(res$species_code),
+      sort(ind_measure$species_code)
+    )
+
+    testthat::expect_equal(
+      res$operation_id,
+      ind_measure$operation_id
+    )
+
+    testthat::expect_equal(
+      res$batch_id,
+      ind_measure$batch_id
+    )
+
+    testthat::expect_true(
+      "size" %in% names(res)
+    )
+  }
+)
 
 testthat::test_that(
   "remove_missing_species removes species missing in reference tables",
   {
-  ind_measure <- data.frame(
-    species_code = c("A", "B", "C", "A"),
-    size = c(1, 2, 3, 4)
-  )
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op1", "op2", "op2"),
+      batch_id = c("b1", "b2", "b3", "b4"),
+      species_code = c("A", "B", "C", "A"),
+      size = c(1, 2, 3, 4)
+    )
 
-  fish_diet_shift <- data.frame(
-    species_code = c("A", "B"),
-    size_min = c(0, 0),
-    size_max = c(10, 10),
-    fish = c(0, 0)
-  )
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B"),
+      size_min = c(0, 0),
+      size_max = c(10, 10),
+      fish = c(0, 0)
+    )
 
-  pred_win <- data.frame(
-    species_code = c("A", "B"),
-    beta_min = c(0.2, 0.2),
-    beta_max = c(1.0, 1.0)
-  )
+    pred_win <- data.frame(
+      species_code = c("A", "B"),
+      beta_min = c(0.2, 0.2),
+      beta_max = c(1.0, 1.0)
+    )
 
-  res <- remove_missing_species(ind_measure, fish_diet_shift, pred_win)
+    res <- remove_missing_species(
+      ind_measure,
+      fish_diet_shift,
+      pred_win
+    )
 
-  testthat::expect_false("C" %in% res$species_code)
-  testthat::expect_true(all(res$species_code %in% c("A", "B")))
-  testthat::expect_equal(nrow(res), 3)  # only rows for A and B
-})
+    testthat::expect_false(
+      "C" %in% res$species_code
+    )
+
+    testthat::expect_true(
+      all(res$species_code %in% c("A", "B"))
+    )
+
+    testthat::expect_equal(
+      nrow(res),
+      3
+    )
+
+    testthat::expect_equal(
+      res$operation_id,
+      c("op1", "op1", "op2")
+    )
+
+    testthat::expect_equal(
+      res$batch_id,
+      c("b1", "b2", "b4")
+    )
+  }
+)
 
 testthat::test_that(
   "compute_size_classes returns expected columns and structure",
@@ -280,3 +334,79 @@ testthat::test_that(
     "Inconsistent 'num_classes'"
   )
 })
+
+testthat::test_that(
+  "remove_missing_species renames size_mm to size",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op1"),
+      batch_id = c("b1", "b2"),
+      species_code = c("A", "B"),
+      size_mm = c(10, 20)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    res <- remove_missing_species(
+      ind_measure,
+      fish_diet_shift,
+      pred_win
+    )
+
+    testthat::expect_true(
+      "size" %in% names(res)
+    )
+
+    testthat::expect_false(
+      "size_mm" %in% names(res)
+    )
+
+    testthat::expect_equal(
+      res$size,
+      ind_measure$size_mm
+    )
+
+    testthat::expect_equal(
+      res$operation_id,
+      ind_measure$operation_id
+    )
+
+    testthat::expect_equal(
+      res$batch_id,
+      ind_measure$batch_id
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species errors when required identifiers are missing",
+  {
+    ind_measure <- data.frame(
+      species_code = c("A", "B"),
+      size = c(1, 2)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_error(
+      remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "operation_id, batch_id"
+    )
+  }
+)

@@ -45,15 +45,17 @@
 #' all relevant data sources.
 #'
 #' @param ind_measure A data frame containing individual-level measurements
-#'   with a column `species_code` identifying each species.
+#'   with the columns `operation_id`, `batch_id`, and `species_code`, and a
+#'   body-size column named either `size` or `size_mm`.
 #' @param fish_diet_shift A data frame containing species dietary information,
 #'   with a column `species_code`.
 #' @param pred_win A data frame containing predator window or prey availability
 #'   data, with a column `species_code`.
 #'
 #' @return
-#' A filtered version of `ind_measure` containing only species that appear in
-#' both `fish_diet_shift` and `pred_win`.
+#' A data frame containing the filtered individual measurements with the
+#' columns `operation_id`, `batch_id`, `species_code`, and `size`.
+#' The input body-size column is standardised to `size`.
 #'
 #' @details
 #' The function checks whether each species in `ind_measure` is represented in
@@ -68,26 +70,87 @@
 #' @export
 remove_missing_species <- function(ind_measure, fish_diet_shift, pred_win) {
 
-  .assert_has_cols(ind_measure,     "species_code", "ind_measure")
-  .assert_has_cols(fish_diet_shift, "species_code", "fish_diet_shift")
-  .assert_has_cols(pred_win,        "species_code", "pred_win")
+  .assert_has_cols(
+    ind_measure,
+    c(
+      "operation_id",
+      "batch_id",
+      "species_code"
+    ),
+    "ind_measure"
+  )
 
-  sp_ind  <- unique(ind_measure$species_code)
+  .assert_has_cols(
+    fish_diet_shift,
+    "species_code",
+    "fish_diet_shift"
+  )
+
+  .assert_has_cols(
+    pred_win,
+    "species_code",
+    "pred_win"
+  )
+
+  size_columns <- intersect(
+    c("size", "size_mm"),
+    names(ind_measure)
+  )
+
+  if (length(size_columns) == 0L) {
+    stop(
+      "`ind_measure` must contain either a `size` or a `size_mm` column.",
+      call. = FALSE
+    )
+  }
+
+  if (length(size_columns) > 1L) {
+    stop(
+      "`ind_measure` contains both `size` and `size_mm`. Please retain only one body-size column.",
+      call. = FALSE
+    )
+  }
+
+  sp_ind <- unique(ind_measure$species_code)
   sp_diet <- unique(fish_diet_shift$species_code)
   sp_pred <- unique(pred_win$species_code)
 
-  missing <- setdiff(sp_ind, intersect(sp_diet, sp_pred))
+  missing <- setdiff(
+    sp_ind,
+    intersect(sp_diet, sp_pred)
+  )
 
-  if (length(missing) > 0) {
-    message("Missing species found and removed: ",
-            paste(missing, collapse = " "))
-    ind_measure <- ind_measure[!(ind_measure$species_code %in% missing), ,
-                               drop = FALSE]
+  if (length(missing) > 0L) {
+    message(
+      "Missing species found and removed: ",
+      paste(missing, collapse = ", ")
+    )
+
+    ind_measure <- ind_measure[
+      !(ind_measure$species_code %in% missing),
+      ,
+      drop = FALSE
+    ]
   } else {
     message("No missing species found (nothing removed).")
   }
 
-  ind_measure
+  size_column <- size_columns[[1L]]
+
+  result <- ind_measure[
+    ,
+    c(
+      "operation_id",
+      "batch_id",
+      "species_code",
+      size_column
+    ),
+    drop = FALSE
+  ]
+
+  names(result)[names(result) == size_column] <- "size"
+
+  result
 }
 
 ##########################
@@ -281,7 +344,7 @@ build_metaweb <- function(tab_size_classes,
                           method_resource_fish = "midpoint",
                           method_predation_window="midpoint",
                           method_fish_fish="midpoint") {
-  
+
   ## ---- Basic validation ----
   .assert_has_cols(tab_size_classes, c("species_code", "lower_bound"),
                    "tab_size_classes")
@@ -448,7 +511,7 @@ build_metaweb <- function(tab_size_classes,
 
   ## ---- Piscivory status per trophic species (predator filter) ----
   diet_by_sp <- split(fish_diet_shift, fish_diet_shift$species_code)
- 
+
   get_row_for_size_midpoint <- function(df, size_val, sp, ts_code) {
     # choose row where size_min <= size <= size_max (using greater or equal for both poses no problem as the upper bound of a size class is always lower than the lower bound of the adjacent larger size class)
     idx <- which(size_val >= df$size_min & size_val <= df$size_max)
@@ -528,7 +591,7 @@ build_metaweb <- function(tab_size_classes,
           )
         }
     }
-         
+
     piscivory[i] <- .as_01_numeric(row_i[["fish"]], "fish_diet_shift$fish")
 
     # resource-fish diet proportions / flags for selected resources
@@ -625,13 +688,13 @@ build_metaweb <- function(tab_size_classes,
 #' foodweb_mat <- matrix(rnorm(9), 3, 3)
 #' colnames(foodweb_mat) <- c("A", "B", "C")
 #' rownames(foodweb_mat) <- c("a", "b", "c")
-#' 
+#'
 #' ## Visualise
 #' print(foodweb_mat)
-#' 
+#'
 #' ## Function to flatten food web matrix
 #' foodweb_tab <- flatten_foodweb(foodweb_mat)
-#' 
+#'
 #' ## Visualise
 #' print(foodweb_tab)
 #' }
@@ -640,25 +703,25 @@ build_metaweb <- function(tab_size_classes,
 #'
 #' @export
 flatten_foodweb <- function(foodweb_mat) {
-  
+
   ## Check row and column names
   if (is.null(rownames(foodweb_mat)) || is.null(colnames(foodweb_mat))) {
     stop("metaweb must have both rownames and colnames.")
   }
-  
+
   ## Interactions
   values <- as.vector(t(foodweb_mat))
-  
+
   ## Format prey and consumer names
   prey_ids <- rep(rownames(foodweb_mat), each=length(rownames(foodweb_mat)))
   consumer_ids <- rep(colnames(foodweb_mat), length(colnames(foodweb_mat)))
-  
+
   ## Format table
   foodweb_tab <- data.frame(prey=prey_ids, consumer=consumer_ids, interaction=values)
-  
+
   ## Return
   return(foodweb_tab)
-  
+
 }
 
 #' Reconstruct a food web adjacency matrix from long format
@@ -684,13 +747,13 @@ flatten_foodweb <- function(foodweb_mat) {
 #' consumers <- rep(c("A","B","C"))
 #' interactions <- rnorm(9)
 #' foodweb_tab <- data.frame(prey=prey, consumer=consumers, interaction=interactions)
-#' 
+#'
 #' ## Visualise
 #' print(foodweb_tab)
-#' 
+#'
 #' ## Unflatten table
 #' foodweb_mat <- unflatten_foodweb(foodweb_tab)
-#' 
+#'
 #' ## Visualise
 #' print(foodweb_mat)
 #' }
@@ -700,18 +763,18 @@ flatten_foodweb <- function(foodweb_mat) {
 #' @export
 unflatten_foodweb <- function(foodweb_tab) {
 
-  ## Check columns  
+  ## Check columns
   if (!all(c("prey", "consumer", "interaction") %in% names(foodweb_tab))) {
     stop(
       "flattened_fw must contain columns: prey, consumer, interaction.",
       call. = FALSE
     )
   }
-  
+
   ## Get species code
   prey <- unique(foodweb_tab$prey)
   consumer <- unique(foodweb_tab$consumer)
-  
+
   ## Re-assemble interaction matrix
   foodweb_mat <- matrix(
     foodweb_tab$interaction,
@@ -722,7 +785,7 @@ unflatten_foodweb <- function(foodweb_tab) {
 
   ## Return
   return(foodweb_mat)
-  
+
 }
 
 #' Flatten a list of food web matrices into a single long-format table
@@ -779,30 +842,30 @@ unflatten_foodweb <- function(foodweb_tab) {
 #'
 #' @export
 flatten_foodweb_list <- function(foodweb_mat_list){
-  
+
   ## Initiate
   local_fws_tab = data.frame()
-  
+
   ## For each local food web
   for (i in 1:length(foodweb_mat_list)){
-    
+
     ## Get local food web
     operation_id_i = names(foodweb_mat_list)[i]
     local_fw_i = foodweb_mat_list[[i]]
-    
+
     ## Flatten food web
     local_fw_i_tab = flatten_foodweb(local_fw_i)
-    
+
     ## Add operation id
     local_fw_i_tab$operation_id = operation_id_i
-    
+
     ## Collect
     local_fws_tab = rbind(local_fws_tab, local_fw_i_tab)
-    
+
   }
-  
+
   ## End
   return(local_fws_tab)
-  
+
 }
 

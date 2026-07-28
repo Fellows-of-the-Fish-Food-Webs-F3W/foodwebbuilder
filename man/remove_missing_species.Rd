@@ -8,7 +8,8 @@ remove_missing_species(ind_measure, fish_diet_shift, pred_win)
 }
 \arguments{
 \item{ind_measure}{A data frame containing individual-level measurements
-with a column \code{species_code} identifying each species.}
+with the columns \code{operation_id}, \code{batch_id}, and \code{species_code}, and a
+body-size column named either \code{size} or \code{size_mm}.}
 
 \item{fish_diet_shift}{A data frame containing species dietary information,
 with a column \code{species_code}.}
@@ -17,8 +18,9 @@ with a column \code{species_code}.}
 data, with a column \code{species_code}.}
 }
 \value{
-A filtered version of \code{ind_measure} containing only species that appear in
-both \code{fish_diet_shift} and \code{pred_win}.
+A data frame containing the filtered individual measurements with the
+columns \code{operation_id}, \code{batch_id}, \code{species_code}, and \code{size}.
+The input body-size column is standardised to \code{size}.
 }
 \description{
 Cleans the individual measurement dataset by removing species that are not
