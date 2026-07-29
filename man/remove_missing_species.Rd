@@ -7,9 +7,10 @@
 remove_missing_species(ind_measure, fish_diet_shift, pred_win)
 }
 \arguments{
-\item{ind_measure}{A data frame containing individual-level measurements
-with the columns \code{operation_id}, \code{batch_id}, and \code{species_code}, and a
-body-size column named either \code{size} or \code{size_mm}.}
+\item{ind_measure}{A data frame containing individual-level measurements.
+It must contain at least the columns \code{operation_id},
+\code{species_code}, and a body-size column named either \code{size}
+or \code{size_mm}.}
 
 \item{fish_diet_shift}{A data frame containing species dietary information,
 with a column \code{species_code}.}

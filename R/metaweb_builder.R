@@ -44,9 +44,10 @@
 #' This ensures that all species retained have complete information across
 #' all relevant data sources.
 #'
-#' @param ind_measure A data frame containing individual-level measurements
-#'   with the columns `operation_id`, `batch_id`, and `species_code`, and a
-#'   body-size column named either `size` or `size_mm`.
+#' @param ind_measure A data frame containing individual-level measurements.
+#'   It must contain at least the columns `operation_id`,
+#'   `species_code`, and a body-size column named either `size`
+#'   or `size_mm`.
 #' @param fish_diet_shift A data frame containing species dietary information,
 #'   with a column `species_code`.
 #' @param pred_win A data frame containing predator window or prey availability
@@ -74,7 +75,6 @@ remove_missing_species <- function(ind_measure, fish_diet_shift, pred_win) {
     ind_measure,
     c(
       "operation_id",
-      "batch_id",
       "species_code"
     ),
     "ind_measure"
@@ -141,7 +141,6 @@ remove_missing_species <- function(ind_measure, fish_diet_shift, pred_win) {
     ,
     c(
       "operation_id",
-      "batch_id",
       "species_code",
       size_column
     ),

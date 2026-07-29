@@ -3,7 +3,6 @@ testthat::test_that(
   {
     ind_measure <- data.frame(
       operation_id = c("op1", "op1", "op2"),
-      batch_id = c("b1", "b2", "b3"),
       species_code = c("A", "B", "A"),
       size = c(1, 2, 3)
     )
@@ -43,12 +42,12 @@ testthat::test_that(
     )
 
     testthat::expect_equal(
-      res$batch_id,
-      ind_measure$batch_id
-    )
-
-    testthat::expect_true(
-      "size" %in% names(res)
+      names(res),
+      c(
+        "operation_id",
+        "species_code",
+        "size"
+      )
     )
   }
 )
@@ -58,7 +57,6 @@ testthat::test_that(
   {
     ind_measure <- data.frame(
       operation_id = c("op1", "op1", "op2", "op2"),
-      batch_id = c("b1", "b2", "b3", "b4"),
       species_code = c("A", "B", "C", "A"),
       size = c(1, 2, 3, 4)
     )
@@ -101,8 +99,13 @@ testthat::test_that(
     )
 
     testthat::expect_equal(
-      res$batch_id,
-      c("b1", "b2", "b4")
+      res$species_code,
+      c("A", "B", "A")
+    )
+
+    testthat::expect_equal(
+      res$size,
+      c(1, 2, 4)
     )
   }
 )
@@ -340,7 +343,6 @@ testthat::test_that(
   {
     ind_measure <- data.frame(
       operation_id = c("op1", "op1"),
-      batch_id = c("b1", "b2"),
       species_code = c("A", "B"),
       size_mm = c(10, 20)
     )
@@ -359,12 +361,13 @@ testthat::test_that(
       pred_win
     )
 
-    testthat::expect_true(
-      "size" %in% names(res)
-    )
-
-    testthat::expect_false(
-      "size_mm" %in% names(res)
+    testthat::expect_equal(
+      names(res),
+      c(
+        "operation_id",
+        "species_code",
+        "size"
+      )
     )
 
     testthat::expect_equal(
@@ -378,8 +381,8 @@ testthat::test_that(
     )
 
     testthat::expect_equal(
-      res$batch_id,
-      ind_measure$batch_id
+      res$species_code,
+      ind_measure$species_code
     )
   }
 )
@@ -406,7 +409,7 @@ testthat::test_that(
         fish_diet_shift,
         pred_win
       ),
-      "operation_id, batch_id"
+      "operation_id"
     )
   }
 )
