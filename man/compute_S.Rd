@@ -2,7 +2,7 @@
 % Please edit documentation in R/compute_metrics.r
 \name{compute_S}
 \alias{compute_S}
-\title{Species richness (S)}
+\title{Number of nodes (S)}
 \usage{
 compute_S(M)
 }
@@ -10,8 +10,8 @@ compute_S(M)
 \item{M}{A square adjacency or interaction matrix.}
 }
 \value{
-Integer, number of species.
+Integer, number of nodes.
 }
 \description{
-Number of species (nodes) in the food web.
+Number of nodes in the food web.
 }

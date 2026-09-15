@@ -531,7 +531,9 @@ build_metaweb <- function(tab_size_classes,
     if (length(idx) == 0) {
       stop(
         "No matching diet interval found for trophic species ", ts_code,
-        " (species_code=", sp, ", size midpoint=", signif(size_val, 6), "). ",
+        " (species_code=", sp,
+        ", size-class bounds=[", signif(size_val_lb, 6),
+        ", ", signif(size_val_hb, 6), "]). ",
         "Check fish_diet_shift size_min/size_max coverage.",
         call. = FALSE
       )

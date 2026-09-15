@@ -20,10 +20,13 @@ testthat::test_that(
       beta_max = c(1.0, 1.0)
     )
 
-    res <- remove_missing_species(
-      ind_measure,
-      fish_diet_shift,
-      pred_win
+    testthat::expect_message(
+      res <- remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "No missing species found \\(nothing removed\\)\\."
     )
 
     testthat::expect_equal(
@@ -52,6 +55,7 @@ testthat::test_that(
   }
 )
 
+
 testthat::test_that(
   "remove_missing_species removes species missing in reference tables",
   {
@@ -74,10 +78,13 @@ testthat::test_that(
       beta_max = c(1.0, 1.0)
     )
 
-    res <- remove_missing_species(
-      ind_measure,
-      fish_diet_shift,
-      pred_win
+    testthat::expect_message(
+      res <- remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "Missing species found and removed: C"
     )
 
     testthat::expect_false(
@@ -110,233 +117,316 @@ testthat::test_that(
   }
 )
 
+
 testthat::test_that(
   "compute_size_classes returns expected columns and structure",
   {
-  ind_measure <- data.frame(
-    species_code = c("A", "A", "B", "B"),
-    size = c(5, 10, 8, 16)
-  )
+    ind_measure <- data.frame(
+      species_code = c("A", "A", "B", "B"),
+      size = c(5, 10, 8, 16)
+    )
 
-  res <- compute_size_classes(ind_measure, num_classes = 2)
+    res <- compute_size_classes(
+      ind_measure,
+      num_classes = 2
+    )
 
-  testthat::expect_s3_class(res, "data.frame")
-  testthat::expect_equal(nrow(res), 2)
-  testthat::expect_equal(
-    colnames(res),
-    c("species_code", "lower_bound", "upper_bound_1", "upper_bound_2")
-  )
+    testthat::expect_s3_class(res, "data.frame")
 
-  # numeric columns are numeric
-  testthat::expect_true(is.numeric(res$lower_bound))
-  testthat::expect_true(is.numeric(res$upper_bound_1))
-  testthat::expect_true(is.numeric(res$upper_bound_2))
-})
+    testthat::expect_equal(
+      nrow(res),
+      2
+    )
+
+    testthat::expect_equal(
+      colnames(res),
+      c(
+        "species_code",
+        "lower_bound",
+        "upper_bound_1",
+        "upper_bound_2"
+      )
+    )
+
+    testthat::expect_true(
+      is.numeric(res$lower_bound)
+    )
+
+    testthat::expect_true(
+      is.numeric(res$upper_bound_1)
+    )
+
+    testthat::expect_true(
+      is.numeric(res$upper_bound_2)
+    )
+  }
+)
+
 
 testthat::test_that(
   "compute_size_classes correctly splits size range per species",
   {
-  ind_measure <- data.frame(
-    species_code = c("A", "A", "B", "B"),
-    size = c(0, 10, 0, 20)
-  )
+    ind_measure <- data.frame(
+      species_code = c("A", "A", "B", "B"),
+      size = c(0, 10, 0, 20)
+    )
 
-  res <- compute_size_classes(ind_measure, num_classes = 2)
+    res <- compute_size_classes(
+      ind_measure,
+      num_classes = 2
+    )
 
-  row_a <- res[res$species_code == "A", ]
-  testthat::expect_equal(as.numeric(row_a[1, "lower_bound"]), 0)
-  testthat::expect_equal(as.numeric(row_a[1, "upper_bound_1"]), 5)
-  testthat::expect_equal(as.numeric(row_a[1, "upper_bound_2"]), 10)
+    row_a <- res[res$species_code == "A", ]
 
-  row_b <- res[res$species_code == "B", ]
-  testthat::expect_equal(as.numeric(row_b[1, "lower_bound"]), 0)
-  testthat::expect_equal(as.numeric(row_b[1, "upper_bound_1"]), 10)
-  testthat::expect_equal(as.numeric(row_b[1, "upper_bound_2"]), 20)
-})
+    testthat::expect_equal(
+      as.numeric(row_a[1, "lower_bound"]),
+      0
+    )
+
+    testthat::expect_equal(
+      as.numeric(row_a[1, "upper_bound_1"]),
+      5
+    )
+
+    testthat::expect_equal(
+      as.numeric(row_a[1, "upper_bound_2"]),
+      10
+    )
+
+    row_b <- res[res$species_code == "B", ]
+
+    testthat::expect_equal(
+      as.numeric(row_b[1, "lower_bound"]),
+      0
+    )
+
+    testthat::expect_equal(
+      as.numeric(row_b[1, "upper_bound_1"]),
+      10
+    )
+
+    testthat::expect_equal(
+      as.numeric(row_b[1, "upper_bound_2"]),
+      20
+    )
+  }
+)
+
 
 testthat::test_that(
   "build_metaweb builds a square matrix with consistent dimnames",
   {
-  # 2 fish species, 2 size classes each -> 4 trophic species
-  tab_size_classes <- data.frame(
-    species_code  = c("A", "B"),
-    lower_bound   = c(0, 0),
-    upper_bound_1 = c(10, 10),
-    upper_bound_2 = c(20, 20)
-  )
+    # 2 fish species, 2 size classes each -> 4 trophic species
+    tab_size_classes <- data.frame(
+      species_code  = c("A", "B"),
+      lower_bound   = c(0, 0),
+      upper_bound_1 = c(10, 10),
+      upper_bound_2 = c(20, 20)
+    )
 
-  pred_win <- data.frame(
-    species_code = c("A", "B"),
-    beta_min     = c(0.25, 0.25),
-    beta_max     = c(1.0, 1.0)
-  )
+    pred_win <- data.frame(
+      species_code = c("A", "B"),
+      beta_min     = c(0.25, 0.25),
+      beta_max     = c(1.0, 1.0)
+    )
 
-  fish_diet_shift <- data.frame(
-    species_code = c("A", "B"),
-    size_min     = c(0, 0),
-    size_max     = c(25, 25),
-    fish         = c(0, 1),        # B piscivorous, A not
-    zooplankton  = c(1, 1),
-    benthos      = c(0, 1)
-  )
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B"),
+      size_min     = c(0, 0),
+      size_max     = c(25, 25),
+      fish         = c(0, 1),
+      zooplankton  = c(1, 1),
+      benthos      = c(0, 1)
+    )
 
-  resource_diet_shift <- data.frame(
-    species_code = c("zooplankton", "benthos"),
-    zooplankton  = c(0, 1),
-    benthos      = c(0, 0)
-  )
+    resource_diet_shift <- data.frame(
+      species_code = c("zooplankton", "benthos"),
+      zooplankton  = c(0, 1),
+      benthos      = c(0, 0)
+    )
 
-  selected_resources <- c("zooplankton", "benthos")
+    selected_resources <- c(
+      "zooplankton",
+      "benthos"
+    )
 
-  mw <- build_metaweb(
-    tab_size_classes    = tab_size_classes,
-    pred_win            = pred_win,
-    fish_diet_shift     = fish_diet_shift,
-    resource_diet_shift = resource_diet_shift,
-    num_classes         = 2,  # optional check (should pass)
-    selected_resources  = selected_resources
-  )
-
-  testthat::expect_true(is.matrix(mw))
-  testthat::expect_equal(nrow(mw), ncol(mw))
-  testthat::expect_identical(rownames(mw), colnames(mw))
-
-  # Expected nodes = trophic species (4) + resources (2) = 6
-  testthat::expect_equal(nrow(mw), 6)
-
-  # Basic sanity on values
-  testthat::expect_true(all(is.finite(mw)))
-})
-
-testthat::test_that(
-  "build_metaweb errors when selected_resources are not valid columns",
-  {
-  tab_size_classes <- data.frame(
-    species_code  = c("A", "B"),
-    lower_bound   = c(0, 0),
-    upper_bound_1 = c(10, 10),
-    upper_bound_2 = c(15, 15)
-  )
-
-  pred_win <- data.frame(
-    species_code = c("A", "B"),
-    beta_min     = c(0.25, 0.5),
-    beta_max     = c(0.9,  1.0)
-  )
-
-  fish_diet_shift <- data.frame(
-    species_code = c("A", "B"),
-    size_min     = c(0, 0),
-    size_max     = c(20, 20),
-    fish         = c(0, 1),
-    zooplankton  = c(1, 1),
-    benthos      = c(0, 1)
-  )
-
-  resource_diet_shift <- data.frame(
-    species_code = c("zooplankton", "benthos"),
-    zooplankton  = c(0, 1),
-    benthos      = c(0, 1)
-  )
-
-  testthat::expect_error(
-    build_metaweb(
+    mw <- build_metaweb(
       tab_size_classes    = tab_size_classes,
       pred_win            = pred_win,
       fish_diet_shift     = fish_diet_shift,
       resource_diet_shift = resource_diet_shift,
       num_classes         = 2,
-      selected_resources  = c("zooplankton", "not_a_resource")
-    ),
-    "not present as columns in both"
-  )
-})
+      selected_resources  = selected_resources
+    )
+
+    testthat::expect_true(
+      is.matrix(mw)
+    )
+
+    testthat::expect_equal(
+      nrow(mw),
+      ncol(mw)
+    )
+
+    testthat::expect_identical(
+      rownames(mw),
+      colnames(mw)
+    )
+
+    # 4 trophic species + 2 resource nodes = 6 nodes
+    testthat::expect_equal(
+      nrow(mw),
+      6
+    )
+
+    testthat::expect_true(
+      all(is.finite(mw))
+    )
+  }
+)
+
+
+testthat::test_that(
+  "build_metaweb errors when selected_resources are not valid columns",
+  {
+    tab_size_classes <- data.frame(
+      species_code  = c("A", "B"),
+      lower_bound   = c(0, 0),
+      upper_bound_1 = c(10, 10),
+      upper_bound_2 = c(15, 15)
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B"),
+      beta_min     = c(0.25, 0.5),
+      beta_max     = c(0.9, 1.0)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B"),
+      size_min     = c(0, 0),
+      size_max     = c(20, 20),
+      fish         = c(0, 1),
+      zooplankton  = c(1, 1),
+      benthos      = c(0, 1)
+    )
+
+    resource_diet_shift <- data.frame(
+      species_code = c("zooplankton", "benthos"),
+      zooplankton  = c(0, 1),
+      benthos      = c(0, 1)
+    )
+
+    testthat::expect_error(
+      build_metaweb(
+        tab_size_classes    = tab_size_classes,
+        pred_win            = pred_win,
+        fish_diet_shift     = fish_diet_shift,
+        resource_diet_shift = resource_diet_shift,
+        num_classes         = 2,
+        selected_resources  = c(
+          "zooplankton",
+          "not_a_resource"
+        )
+      ),
+      "not present as columns in both"
+    )
+  }
+)
+
 
 testthat::test_that(
   "build_metaweb errors when selected_resources are not found as resource nodes",
   {
-  tab_size_classes <- data.frame(
-    species_code  = c("A"),
-    lower_bound   = c(0),
-    upper_bound_1 = c(10),
-    upper_bound_2 = c(20)
-  )
+    tab_size_classes <- data.frame(
+      species_code  = "A",
+      lower_bound   = 0,
+      upper_bound_1 = 10,
+      upper_bound_2 = 20
+    )
 
-  pred_win <- data.frame(
-    species_code = c("A"),
-    beta_min     = c(0.25),
-    beta_max     = c(1.0)
-  )
+    pred_win <- data.frame(
+      species_code = "A",
+      beta_min     = 0.25,
+      beta_max     = 1.0
+    )
 
-  fish_diet_shift <- data.frame(
-    species_code = c("A"),
-    size_min     = c(0),
-    size_max     = c(30),
-    fish         = c(0),
-    zooplankton  = c(1),
-    benthos      = c(0)
-  )
+    fish_diet_shift <- data.frame(
+      species_code = "A",
+      size_min     = 0,
+      size_max     = 30,
+      fish         = 0,
+      zooplankton  = 1,
+      benthos      = 0
+    )
 
-  # Here: 'benthos' exists as a column but not as a node in species_code
-  resource_diet_shift <- data.frame(
-    species_code = c("zooplankton"),
-    zooplankton  = c(0),
-    benthos      = c(0)
-  )
+    # 'benthos' exists as a column but not as a resource node
+    resource_diet_shift <- data.frame(
+      species_code = "zooplankton",
+      zooplankton  = 0,
+      benthos      = 0
+    )
 
-  testthat::expect_error(
-    build_metaweb(
-      tab_size_classes    = tab_size_classes,
-      pred_win            = pred_win,
-      fish_diet_shift     = fish_diet_shift,
-      resource_diet_shift = resource_diet_shift,
-      selected_resources  = c("zooplankton", "benthos")
-    ),
-    "present as columns but not as resource nodes"
-  )
-})
+    testthat::expect_error(
+      build_metaweb(
+        tab_size_classes    = tab_size_classes,
+        pred_win            = pred_win,
+        fish_diet_shift     = fish_diet_shift,
+        resource_diet_shift = resource_diet_shift,
+        selected_resources  = c(
+          "zooplankton",
+          "benthos"
+        )
+      ),
+      "present as columns but not as resource nodes"
+    )
+  }
+)
+
 
 testthat::test_that(
   "build_metaweb errors when num_classes does not match tab_size_classes",
   {
-  tab_size_classes <- data.frame(
-    species_code  = c("A"),
-    lower_bound   = c(0),
-    upper_bound_1 = c(10),
-    upper_bound_2 = c(20)
-  )
+    tab_size_classes <- data.frame(
+      species_code  = "A",
+      lower_bound   = 0,
+      upper_bound_1 = 10,
+      upper_bound_2 = 20
+    )
 
-  pred_win <- data.frame(
-    species_code = c("A"),
-    beta_min     = c(0.25),
-    beta_max     = c(1.0)
-  )
+    pred_win <- data.frame(
+      species_code = "A",
+      beta_min     = 0.25,
+      beta_max     = 1.0
+    )
 
-  fish_diet_shift <- data.frame(
-    species_code = c("A"),
-    size_min     = c(0),
-    size_max     = c(30),
-    fish         = c(0),
-    zooplankton  = c(1)
-  )
+    fish_diet_shift <- data.frame(
+      species_code = "A",
+      size_min     = 0,
+      size_max     = 30,
+      fish         = 0,
+      zooplankton  = 1
+    )
 
-  resource_diet_shift <- data.frame(
-    species_code = c("zooplankton"),
-    zooplankton  = c(0)
-  )
+    resource_diet_shift <- data.frame(
+      species_code = "zooplankton",
+      zooplankton  = 0
+    )
 
-  testthat::expect_error(
-    build_metaweb(
-      tab_size_classes    = tab_size_classes,
-      pred_win            = pred_win,
-      fish_diet_shift     = fish_diet_shift,
-      resource_diet_shift = resource_diet_shift,
-      num_classes         = 3,  # inconsistent on purpose
-      selected_resources  = "zooplankton"
-    ),
-    "Inconsistent 'num_classes'"
-  )
-})
+    testthat::expect_error(
+      build_metaweb(
+        tab_size_classes    = tab_size_classes,
+        pred_win            = pred_win,
+        fish_diet_shift     = fish_diet_shift,
+        resource_diet_shift = resource_diet_shift,
+        num_classes         = 3,
+        selected_resources  = "zooplankton"
+      ),
+      "Inconsistent 'num_classes'"
+    )
+  }
+)
+
 
 testthat::test_that(
   "remove_missing_species renames size_mm to size",
@@ -355,10 +445,13 @@ testthat::test_that(
       species_code = c("A", "B")
     )
 
-    res <- remove_missing_species(
-      ind_measure,
-      fish_diet_shift,
-      pred_win
+    testthat::expect_message(
+      res <- remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "No missing species found \\(nothing removed\\)\\."
     )
 
     testthat::expect_equal(
@@ -387,6 +480,7 @@ testthat::test_that(
   }
 )
 
+
 testthat::test_that(
   "remove_missing_species errors when required identifiers are missing",
   {
@@ -410,6 +504,113 @@ testthat::test_that(
         pred_win
       ),
       "operation_id"
+    )
+  }
+)
+
+
+testthat::test_that(
+  "build_metaweb reports size-class bounds when no diet interval matches",
+  {
+    tab_size_classes <- data.frame(
+      species_code  = "A",
+      lower_bound   = 0,
+      upper_bound_1 = 10,
+      upper_bound_2 = 20
+    )
+
+    pred_win <- data.frame(
+      species_code = "A",
+      beta_min     = 0.25,
+      beta_max     = 1.0
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = "A",
+      species_name = "Species A",
+      size_min     = 30,
+      size_max     = 40,
+      fish         = 0,
+      zooplankton  = 1
+    )
+
+    resource_diet_shift <- data.frame(
+      species_code = "zooplankton",
+      zooplankton  = 0
+    )
+
+    testthat::expect_error(
+      build_metaweb(
+        tab_size_classes     = tab_size_classes,
+        pred_win             = pred_win,
+        fish_diet_shift      = fish_diet_shift,
+        resource_diet_shift  = resource_diet_shift,
+        selected_resources   = "zooplankton",
+        method_resource_fish = "bounds"
+      ),
+      "size-class bounds=\\[0, 10\\]"
+    )
+  }
+)
+
+
+testthat::test_that(
+  "build_metaweb works with bounds methods",
+  {
+    tab_size_classes <- data.frame(
+      species_code  = "A",
+      lower_bound   = 0,
+      upper_bound_1 = 10,
+      upper_bound_2 = 20
+    )
+
+    pred_win <- data.frame(
+      species_code = "A",
+      beta_min     = 0.25,
+      beta_max     = 1.0
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = "A",
+      species_name = "Species A",
+      size_min     = 0,
+      size_max     = 25,
+      fish         = 0,
+      zooplankton  = 1
+    )
+
+    resource_diet_shift <- data.frame(
+      species_code = "zooplankton",
+      zooplankton  = 0
+    )
+
+    mw <- build_metaweb(
+      tab_size_classes        = tab_size_classes,
+      pred_win                = pred_win,
+      fish_diet_shift         = fish_diet_shift,
+      resource_diet_shift     = resource_diet_shift,
+      selected_resources      = "zooplankton",
+      method_resource_fish    = "bounds",
+      method_predation_window = "bounds",
+      method_fish_fish        = "bounds"
+    )
+
+    testthat::expect_true(
+      is.matrix(mw)
+    )
+
+    testthat::expect_equal(
+      dim(mw),
+      c(3, 3)
+    )
+
+    testthat::expect_identical(
+      rownames(mw),
+      colnames(mw)
+    )
+
+    testthat::expect_true(
+      all(is.finite(mw))
     )
   }
 )

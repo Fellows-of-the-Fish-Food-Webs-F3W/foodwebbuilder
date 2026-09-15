@@ -10,7 +10,7 @@ compute_metrics_summary(M)
 \item{M}{A square adjacency or interaction matrix.}
 }
 \value{
-A named numeric vector containing species richness (S),
+A named numeric vector containing number of nodes (S),
 number of links (L), linkage density (L/S), connectance (C),
 mean and maximum trophic level, mean and maximum trophic breadth,
 mean omnivory index, and fractions of basal, top, and intermediate nodes.
