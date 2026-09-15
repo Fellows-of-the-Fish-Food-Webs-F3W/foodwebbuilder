@@ -125,7 +125,7 @@ for (i in 1:length(metawebs)){
   degree_out = compute_outward_degree(metaweb)
   
   ## Compute degree of omnivory
-  OI = compute_trophic_breadth(metaweb, TL)
+  OI = compute_omnivory_index(metaweb, TL)
   
   ## Collect
   metawebs_metrics[[i]] = c(S, L, linkage_density, C,

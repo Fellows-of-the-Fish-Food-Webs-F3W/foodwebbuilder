@@ -1,0 +1,187 @@
+---
+title: "compute_metrics_methods"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{compute_metrics_methods}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+## Figure options
+knitr::opts_chunk$set(
+  fig.width = 8,
+  fig.height = 6,
+  fig.align = "center",
+  dpi = 150
+)
+
+## Load libraries
+library(foodwebbuilder)
+```
+
+```{r}
+###############
+## LOAD DATA ##
+###############
+
+data(ind_measure)
+data(fish_diet_shift)
+data(resource_diet_shift)
+data(pred_win)
+
+## Remove species with incomplete information once, before the sensitivity
+## analysis. The same cleaned observations are used for every size-class
+## resolution and interaction method.
+ind_clean <- remove_missing_species(
+  ind_measure,
+  fish_diet_shift,
+  pred_win
+)
+
+SELECTED_RESOURCES <- c(
+  "det", "biof", "phytob", "macroph", "phytopl", "zoopl", "zoob"
+)
+METHODS <- c("bounds", "midpoint")
+NUM_CLASSES <- 1:16
+```
+
+```{r}
+############################
+## BUILD METAWEBS AND DATA ##
+############################
+
+## Build one set of metawebs for each interaction method and number of size
+## classes. All three method arguments are varied together here.
+metawebs <- setNames(vector("list", length(METHODS)), METHODS)
+
+for (method in METHODS) {
+  metawebs[[method]] <- vector("list", length(NUM_CLASSES))
+
+  for (i in seq_along(NUM_CLASSES)) {
+    tab_size_classes <- compute_size_classes(
+      ind_clean,
+      NUM_CLASSES[[i]]
+    )
+
+    metawebs[[method]][[i]] <- build_metaweb(
+      tab_size_classes        = tab_size_classes,
+      pred_win                = pred_win,
+      fish_diet_shift         = fish_diet_shift,
+      resource_diet_shift     = resource_diet_shift,
+      num_classes             = NUM_CLASSES[[i]],
+      selected_resources      = SELECTED_RESOURCES,
+      method_resource_fish    = method,
+      method_predation_window = method,
+      method_fish_fish        = method
+    )
+  }
+}
+```
+
+```{r}
+#####################
+## COMPUTE METRICS ##
+#####################
+
+## Compute the same metrics as in the original sensitivity analysis for both
+## methods. Rows correspond to the number of size classes.
+COL_NAMES <- c(
+  "S", "L", "L/S", "C", "meanTL", "maxTL", "meanTB", "maxTB",
+  "meanOI", "fracBase", "fracInt", "fracTop"
+)
+
+metawebs_metrics <- setNames(vector("list", length(METHODS)), METHODS)
+
+for (method in METHODS) {
+  metrics <- vector("list", length(metawebs[[method]]))
+
+  for (i in seq_along(metawebs[[method]])) {
+    metaweb <- metawebs[[method]][[i]]
+
+    ## Compute bottom-up fluxes through the food web
+    fluxes <- compute_bottom_up_fluxes(metaweb)
+
+    ## Compute basic metrics
+    S <- compute_S(metaweb)
+    L <- compute_L(metaweb)
+    linkage_density <- compute_linkage_density(metaweb)
+    C <- compute_connectance(metaweb)
+
+    ## Compute fractions of basal, intermediate, and top nodes
+    frac_basal <- length(get_basal_nodes(metaweb)) / S
+    frac_leaf <- length(get_leaf_nodes(metaweb)) / S
+    frac_intermediate <- 1 - (frac_basal + frac_leaf)
+
+    ## Compute trophic metrics
+    TL <- compute_trophic_level(metaweb)
+    TB <- compute_trophic_breadth(metaweb, TL)
+    OI <- compute_omnivory_index(metaweb, TL)
+
+    ## Compute degrees
+    degree_in <- compute_inward_degree(metaweb)
+    degree_out <- compute_outward_degree(metaweb)
+
+    ## Collect in the same order used by the original vignette
+    metrics[[i]] <- c(
+      S, L, linkage_density, C,
+      mean(TL), max(TL),
+      mean(TB), max(TB),
+      mean(OI),
+      frac_basal, frac_intermediate, frac_leaf
+    )
+  }
+
+  metawebs_metrics[[method]] <- matrix(
+    unlist(metrics),
+    ncol = length(COL_NAMES),
+    byrow = TRUE,
+    dimnames = list(NULL, COL_NAMES)
+  )
+}
+```
+
+```{r}
+####################
+## VISUALISATIONS ##
+####################
+
+## Use the same 3-by-2 plotting structure as the original vignette, adding a
+## second line for the midpoint method.
+par(mfrow = c(3, 2), bty = "l")
+
+for (i in seq_along(COL_NAMES)) {
+  bounds_values <- metawebs_metrics[["bounds"]][, i]
+  midpoint_values <- metawebs_metrics[["midpoint"]][, i]
+
+  plot(
+    NUM_CLASSES,
+    bounds_values,
+    type = "b",
+    pch = 16,
+    col = "black",
+    ylim = range(c(bounds_values, midpoint_values)),
+    xlab = "Number of Classes",
+    ylab = COL_NAMES[[i]]
+  )
+
+  lines(
+    NUM_CLASSES,
+    midpoint_values,
+    type = "b",
+    pch = 17,
+    col = "red"
+  )
+
+  legend(
+    "topright",
+    legend = c("Bounds", "Midpoint"),
+    col = c("black", "red"),
+    pch = c(16, 17),
+    lty = 1,
+    bty = "n"
+  )
+}
+
+par(mfrow = c(1, 1))
+```
