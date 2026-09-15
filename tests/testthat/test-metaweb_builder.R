@@ -55,7 +55,6 @@ testthat::test_that(
   }
 )
 
-
 testthat::test_that(
   "remove_missing_species removes species missing in reference tables",
   {
@@ -117,6 +116,487 @@ testthat::test_that(
   }
 )
 
+testthat::test_that(
+  "remove_missing_species renames size_mm to size",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op1"),
+      species_code = c("A", "B"),
+      size_mm = c(10, 20)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_message(
+      res <- remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "No missing species found \\(nothing removed\\)\\."
+    )
+
+    testthat::expect_equal(
+      names(res),
+      c(
+        "operation_id",
+        "species_code",
+        "size"
+      )
+    )
+
+    testthat::expect_equal(
+      res$size,
+      ind_measure$size_mm
+    )
+
+    testthat::expect_equal(
+      res$operation_id,
+      ind_measure$operation_id
+    )
+
+    testthat::expect_equal(
+      res$species_code,
+      ind_measure$species_code
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species retains weight when provided",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op1", "op2"),
+      species_code = c("A", "B", "A"),
+      size = c(10, 20, 30),
+      weight = c(5, 15, 25)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_message(
+      res <- remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "No missing species found \\(nothing removed\\)\\."
+    )
+
+    testthat::expect_equal(
+      names(res),
+      c(
+        "operation_id",
+        "species_code",
+        "size",
+        "weight"
+      )
+    )
+
+    testthat::expect_equal(
+      res$weight,
+      ind_measure$weight
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species renames weight_g to weight",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op1", "op2"),
+      species_code = c("A", "B", "A"),
+      size = c(10, 20, 30),
+      weight_g = c(5, 15, 25)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_message(
+      res <- remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "No missing species found \\(nothing removed\\)\\."
+    )
+
+    testthat::expect_equal(
+      names(res),
+      c(
+        "operation_id",
+        "species_code",
+        "size",
+        "weight"
+      )
+    )
+
+    testthat::expect_equal(
+      res$weight,
+      ind_measure$weight_g
+    )
+
+    testthat::expect_false(
+      "weight_g" %in% names(res)
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species standardises size_mm and weight_g",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op1"),
+      species_code = c("A", "B"),
+      size_mm = c(10, 20),
+      weight_g = c(5, 15)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_message(
+      res <- remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "No missing species found \\(nothing removed\\)\\."
+    )
+
+    testthat::expect_equal(
+      names(res),
+      c(
+        "operation_id",
+        "species_code",
+        "size",
+        "weight"
+      )
+    )
+
+    testthat::expect_equal(
+      res$size,
+      ind_measure$size_mm
+    )
+
+    testthat::expect_equal(
+      res$weight,
+      ind_measure$weight_g
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species removes unused individual-level columns",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op1"),
+      species_code = c("A", "B"),
+      size = c(10, 20),
+      weight = c(5, 15),
+      batch_id = c("batch1", "batch2"),
+      other_variable = c(100, 200)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_message(
+      res <- remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "No missing species found \\(nothing removed\\)\\."
+    )
+
+    testthat::expect_equal(
+      names(res),
+      c(
+        "operation_id",
+        "species_code",
+        "size",
+        "weight"
+      )
+    )
+
+    testthat::expect_false(
+      "batch_id" %in% names(res)
+    )
+
+    testthat::expect_false(
+      "other_variable" %in% names(res)
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species removes weight values associated with missing species",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op1", "op2"),
+      species_code = c("A", "B", "C"),
+      size = c(10, 20, 30),
+      weight = c(5, 15, 25)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_message(
+      res <- remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "Missing species found and removed: C"
+    )
+
+    testthat::expect_equal(
+      res$species_code,
+      c("A", "B")
+    )
+
+    testthat::expect_equal(
+      res$weight,
+      c(5, 15)
+    )
+
+    testthat::expect_equal(
+      nrow(res),
+      2
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species errors when operation_id is missing",
+  {
+    ind_measure <- data.frame(
+      species_code = c("A", "B"),
+      size = c(1, 2)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_error(
+      remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "operation_id"
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species errors when species_code is missing from ind_measure",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op2"),
+      size = c(1, 2)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_error(
+      remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "species_code"
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species errors when species_code is missing from fish_diet_shift",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op2"),
+      species_code = c("A", "B"),
+      size = c(1, 2)
+    )
+
+    fish_diet_shift <- data.frame(
+      other_column = c(1, 2)
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_error(
+      remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "species_code"
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species errors when species_code is missing from pred_win",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op2"),
+      species_code = c("A", "B"),
+      size = c(1, 2)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      other_column = c(1, 2)
+    )
+
+    testthat::expect_error(
+      remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "species_code"
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species errors when no body-size column is provided",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op2"),
+      species_code = c("A", "B")
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_error(
+      remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "must contain either a `size` or a `size_mm` column"
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species errors when both size and size_mm are provided",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op2"),
+      species_code = c("A", "B"),
+      size = c(1, 2),
+      size_mm = c(10, 20)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_error(
+      remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "contains both `size` and `size_mm`"
+    )
+  }
+)
+
+testthat::test_that(
+  "remove_missing_species errors when both weight and weight_g are provided",
+  {
+    ind_measure <- data.frame(
+      operation_id = c("op1", "op2"),
+      species_code = c("A", "B"),
+      size = c(1, 2),
+      weight = c(5, 10),
+      weight_g = c(5, 10)
+    )
+
+    fish_diet_shift <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    pred_win <- data.frame(
+      species_code = c("A", "B")
+    )
+
+    testthat::expect_error(
+      remove_missing_species(
+        ind_measure,
+        fish_diet_shift,
+        pred_win
+      ),
+      "contains both `weight` and `weight_g`"
+    )
+  }
+)
 
 testthat::test_that(
   "compute_size_classes returns expected columns and structure",
@@ -161,7 +641,6 @@ testthat::test_that(
     )
   }
 )
-
 
 testthat::test_that(
   "compute_size_classes correctly splits size range per species",
@@ -211,7 +690,6 @@ testthat::test_that(
     )
   }
 )
-
 
 testthat::test_that(
   "build_metaweb builds a square matrix with consistent dimnames",
@@ -285,7 +763,6 @@ testthat::test_that(
   }
 )
 
-
 testthat::test_that(
   "build_metaweb errors when selected_resources are not valid columns",
   {
@@ -333,7 +810,6 @@ testthat::test_that(
     )
   }
 )
-
 
 testthat::test_that(
   "build_metaweb errors when selected_resources are not found as resource nodes",
@@ -383,7 +859,6 @@ testthat::test_that(
   }
 )
 
-
 testthat::test_that(
   "build_metaweb errors when num_classes does not match tab_size_classes",
   {
@@ -426,88 +901,6 @@ testthat::test_that(
     )
   }
 )
-
-
-testthat::test_that(
-  "remove_missing_species renames size_mm to size",
-  {
-    ind_measure <- data.frame(
-      operation_id = c("op1", "op1"),
-      species_code = c("A", "B"),
-      size_mm = c(10, 20)
-    )
-
-    fish_diet_shift <- data.frame(
-      species_code = c("A", "B")
-    )
-
-    pred_win <- data.frame(
-      species_code = c("A", "B")
-    )
-
-    testthat::expect_message(
-      res <- remove_missing_species(
-        ind_measure,
-        fish_diet_shift,
-        pred_win
-      ),
-      "No missing species found \\(nothing removed\\)\\."
-    )
-
-    testthat::expect_equal(
-      names(res),
-      c(
-        "operation_id",
-        "species_code",
-        "size"
-      )
-    )
-
-    testthat::expect_equal(
-      res$size,
-      ind_measure$size_mm
-    )
-
-    testthat::expect_equal(
-      res$operation_id,
-      ind_measure$operation_id
-    )
-
-    testthat::expect_equal(
-      res$species_code,
-      ind_measure$species_code
-    )
-  }
-)
-
-
-testthat::test_that(
-  "remove_missing_species errors when required identifiers are missing",
-  {
-    ind_measure <- data.frame(
-      species_code = c("A", "B"),
-      size = c(1, 2)
-    )
-
-    fish_diet_shift <- data.frame(
-      species_code = c("A", "B")
-    )
-
-    pred_win <- data.frame(
-      species_code = c("A", "B")
-    )
-
-    testthat::expect_error(
-      remove_missing_species(
-        ind_measure,
-        fish_diet_shift,
-        pred_win
-      ),
-      "operation_id"
-    )
-  }
-)
-
 
 testthat::test_that(
   "build_metaweb reports size-class bounds when no diet interval matches",
@@ -552,7 +945,6 @@ testthat::test_that(
     )
   }
 )
-
 
 testthat::test_that(
   "build_metaweb works with bounds methods",

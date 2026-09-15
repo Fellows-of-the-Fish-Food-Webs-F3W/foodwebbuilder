@@ -13,5 +13,5 @@ compute_outward_degree(M)
 A numeric vector of outward degrees.
 }
 \description{
-Computes the outward degree (row sums) of each node.
+Computes the outward degree of each node as the number of outgoing links.
 }

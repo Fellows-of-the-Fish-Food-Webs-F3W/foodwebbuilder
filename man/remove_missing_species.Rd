@@ -2,7 +2,7 @@
 % Please edit documentation in R/metaweb_builder.R
 \name{remove_missing_species}
 \alias{remove_missing_species}
-\title{Remove Species with missing data across input tables}
+\title{Remove species with missing data across input tables}
 \usage{
 remove_missing_species(ind_measure, fish_diet_shift, pred_win)
 }
@@ -10,7 +10,8 @@ remove_missing_species(ind_measure, fish_diet_shift, pred_win)
 \item{ind_measure}{A data frame containing individual-level measurements.
 It must contain at least the columns \code{operation_id},
 \code{species_code}, and a body-size column named either \code{size}
-or \code{size_mm}.}
+or \code{size_mm}. An optional \code{weight} or \code{weight_g} column can also be
+provided.}
 
 \item{fish_diet_shift}{A data frame containing species dietary information,
 with a column \code{species_code}.}
@@ -20,8 +21,10 @@ data, with a column \code{species_code}.}
 }
 \value{
 A data frame containing the filtered individual measurements with the
-columns \code{operation_id}, \code{batch_id}, \code{species_code}, and \code{size}.
-The input body-size column is standardised to \code{size}.
+columns \code{operation_id}, \code{species_code}, and \code{size}. If a \code{weight} or
+\code{weight_g} column is present in \code{ind_measure}, it is also retained and
+standardised to \code{weight}. The input body-size column is standardised to
+\code{size}.
 }
 \description{
 Cleans the individual measurement dataset by removing species that are not
@@ -33,6 +36,13 @@ all relevant data sources.
 The function checks whether each species in \code{ind_measure} is represented in
 both reference datasets. Any species missing from either is removed, and a
 message is printed listing which species were excluded.
+
+Body size can be supplied as either \code{size} or \code{size_mm}, but not both.
+The retained body-size column is always returned as \code{size}.
+
+Body weight is optional and can be supplied as either \code{weight} or
+\code{weight_g}, but not both. When present, the retained body-weight column is
+always returned as \code{weight}.
 }
 \examples{
 \dontrun{

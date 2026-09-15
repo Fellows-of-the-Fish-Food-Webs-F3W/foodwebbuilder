@@ -4,17 +4,18 @@
 \alias{compute_trophic_level}
 \title{Compute trophic level}
 \usage{
-compute_trophic_level(M, nIt = 100, output_log = F)
+compute_trophic_level(M, nIt = 100, output_log = FALSE)
 }
 \arguments{
 \item{M}{A square adjacency or interaction matrix.}
 
 \item{nIt}{Maximum number of iterations.}
 
-\item{output_log}{Wether to print the number of iterations until convergence.}
+\item{output_log}{Whether to print the number of iterations until convergence.}
 }
 \value{
-A numeric vector of trophic levels.
+A named numeric vector of trophic levels, with names corresponding
+to matrix column names when available.
 }
 \description{
 Computes trophic levels iteratively until convergence or until

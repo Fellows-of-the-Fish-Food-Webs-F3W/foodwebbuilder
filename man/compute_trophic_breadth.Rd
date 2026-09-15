@@ -12,7 +12,8 @@ compute_trophic_breadth(M, TL)
 \item{TL}{A numeric vector of trophic levels.}
 }
 \value{
-A numeric vector of trophic breadth values.
+A numeric vector of trophic breadth values. Basal nodes and
+consumers with a single resource have a trophic breadth of 0.
 }
 \description{
 Computes the trophic breadth of each node as the standard deviation

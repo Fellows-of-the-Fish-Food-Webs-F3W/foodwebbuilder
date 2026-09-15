@@ -13,5 +13,5 @@ compute_linkage_density(M)
 Numeric, linkage density.
 }
 \description{
-Average number of links per nodes.
+Average number of links per node.
 }

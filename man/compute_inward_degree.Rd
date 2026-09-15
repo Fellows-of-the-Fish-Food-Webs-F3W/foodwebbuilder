@@ -13,5 +13,5 @@ compute_inward_degree(M)
 A numeric vector of inward degrees.
 }
 \description{
-Computes the inward degree (column sums) of each node.
+Computes the inward degree of each node as the number of incoming links.
 }

@@ -36,7 +36,7 @@
 ## CHECK FOR MISSING DATA AND TRIM ##
 #####################################
 
-#' Remove Species with missing data across input tables
+#' Remove species with missing data across input tables
 #'
 #' @description
 #' Cleans the individual measurement dataset by removing species that are not
@@ -47,7 +47,8 @@
 #' @param ind_measure A data frame containing individual-level measurements.
 #'   It must contain at least the columns `operation_id`,
 #'   `species_code`, and a body-size column named either `size`
-#'   or `size_mm`.
+#'   or `size_mm`. An optional `weight` or `weight_g` column can also be
+#'   provided.
 #' @param fish_diet_shift A data frame containing species dietary information,
 #'   with a column `species_code`.
 #' @param pred_win A data frame containing predator window or prey availability
@@ -55,13 +56,22 @@
 #'
 #' @return
 #' A data frame containing the filtered individual measurements with the
-#' columns `operation_id`, `batch_id`, `species_code`, and `size`.
-#' The input body-size column is standardised to `size`.
+#' columns `operation_id`, `species_code`, and `size`. If a `weight` or
+#' `weight_g` column is present in `ind_measure`, it is also retained and
+#' standardised to `weight`. The input body-size column is standardised to
+#' `size`.
 #'
 #' @details
 #' The function checks whether each species in `ind_measure` is represented in
 #' both reference datasets. Any species missing from either is removed, and a
 #' message is printed listing which species were excluded.
+#'
+#' Body size can be supplied as either `size` or `size_mm`, but not both.
+#' The retained body-size column is always returned as `size`.
+#'
+#' Body weight is optional and can be supplied as either `weight` or
+#' `weight_g`, but not both. When present, the retained body-weight column is
+#' always returned as `weight`.
 #'
 #' @examples
 #' \dontrun{
@@ -71,6 +81,7 @@
 #' @export
 remove_missing_species <- function(ind_measure, fish_diet_shift, pred_win) {
 
+  ##Validate required columns
   .assert_has_cols(
     ind_measure,
     c(
@@ -92,6 +103,7 @@ remove_missing_species <- function(ind_measure, fish_diet_shift, pred_win) {
     "pred_win"
   )
 
+  ##Identify body-size column
   size_columns <- intersect(
     c("size", "size_mm"),
     names(ind_measure)
@@ -111,6 +123,23 @@ remove_missing_species <- function(ind_measure, fish_diet_shift, pred_win) {
     )
   }
 
+  size_column <- size_columns[[1L]]
+
+
+  ##Identify optional body-weight column
+  weight_columns <- intersect(
+    c("weight", "weight_g"),
+    names(ind_measure)
+  )
+
+  if (length(weight_columns) > 1L) {
+    stop(
+      "`ind_measure` contains both `weight` and `weight_g`. Please retain only one body-weight column.",
+      call. = FALSE
+    )
+  }
+
+  ##Identify species with missing information
   sp_ind <- unique(ind_measure$species_code)
   sp_diet <- unique(fish_diet_shift$species_code)
   sp_pred <- unique(pred_win$species_code)
@@ -120,6 +149,7 @@ remove_missing_species <- function(ind_measure, fish_diet_shift, pred_win) {
     intersect(sp_diet, sp_pred)
   )
 
+  ##Remove species with missing information
   if (length(missing) > 0L) {
     message(
       "Missing species found and removed: ",
@@ -135,22 +165,37 @@ remove_missing_species <- function(ind_measure, fish_diet_shift, pred_win) {
     message("No missing species found (nothing removed).")
   }
 
-  size_column <- size_columns[[1L]]
+  ##Define output columns
+  output_columns <- c(
+    "operation_id",
+    "species_code",
+    size_column
+  )
 
+  if (length(weight_columns) == 1L) {
+    output_columns <- c(
+      output_columns,
+      weight_columns[[1L]]
+    )
+  }
+
+  ##Select output columns
   result <- ind_measure[
     ,
-    c(
-      "operation_id",
-      "species_code",
-      size_column
-    ),
+    output_columns,
     drop = FALSE
   ]
 
+  ##Standardise column names
   names(result)[names(result) == size_column] <- "size"
+
+  if (length(weight_columns) == 1L) {
+    names(result)[names(result) == weight_columns[[1L]]] <- "weight"
+  }
 
   result
 }
+
 
 ##########################
 ## COMPUTE SIZE CLASSES ##
